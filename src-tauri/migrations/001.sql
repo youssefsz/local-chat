@@ -1,0 +1,18 @@
+PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=ON;
+CREATE TABLE IF NOT EXISTS meta(key TEXT PRIMARY KEY, value TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS contexts(id TEXT PRIMARY KEY, evidence TEXT, namespace TEXT NOT NULL, label TEXT NOT NULL, created INTEGER NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS context_evidence ON contexts(evidence) WHERE evidence IS NOT NULL;
+CREATE TABLE IF NOT EXISTS events(id TEXT PRIMARY KEY, context TEXT NOT NULL REFERENCES contexts(id), namespace TEXT NOT NULL, author TEXT NOT NULL, sequence INTEGER NOT NULL, logical INTEGER NOT NULL, room TEXT NOT NULL, kind TEXT NOT NULL, json TEXT NOT NULL, UNIQUE(namespace,author,sequence));
+CREATE INDEX IF NOT EXISTS events_context_order ON events(context,logical,author,id);
+CREATE INDEX IF NOT EXISTS events_room ON events(context,room,logical,author,id);
+CREATE TABLE IF NOT EXISTS rooms(context TEXT NOT NULL, id TEXT NOT NULL, name TEXT NOT NULL, description TEXT NOT NULL, owner TEXT NOT NULL, archived INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(context,id));
+CREATE TABLE IF NOT EXISTS messages(id TEXT PRIMARY KEY REFERENCES events(id), context TEXT NOT NULL, room TEXT NOT NULL, author TEXT NOT NULL, profile TEXT NOT NULL, content TEXT NOT NULL, mode TEXT NOT NULL, logical INTEGER NOT NULL, timestamp INTEGER NOT NULL, delivery TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS messages_page ON messages(context,room,logical,id);
+CREATE VIRTUAL TABLE IF NOT EXISTS message_fts USING fts5(content, content=messages, content_rowid=rowid);
+CREATE TRIGGER IF NOT EXISTS messages_fts_insert AFTER INSERT ON messages BEGIN INSERT INTO message_fts(rowid,content) VALUES(new.rowid,new.content); END;
+CREATE TABLE IF NOT EXISTS receipts(event TEXT NOT NULL REFERENCES events(id), peer TEXT NOT NULL, PRIMARY KEY(event,peer));
+CREATE TABLE IF NOT EXISTS drafts(context TEXT NOT NULL,room TEXT NOT NULL,content TEXT NOT NULL,code INTEGER NOT NULL,PRIMARY KEY(context,room));
+CREATE TABLE IF NOT EXISTS room_local(context TEXT NOT NULL,room TEXT NOT NULL,muted INTEGER NOT NULL DEFAULT 0,read_logical INTEGER NOT NULL DEFAULT 0,scroll REAL NOT NULL DEFAULT -1,PRIMARY KEY(context,room));
+PRAGMA user_version=1;
+CREATE INDEX IF NOT EXISTS events_logical ON events(logical);

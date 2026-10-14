@@ -1,0 +1,28 @@
+{
+  "name": "local-chat",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "tauri": "tauri",
+    "test": "cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --lib",
+    "format": "prettier --write src && cargo fmt --manifest-path src-tauri/Cargo.toml",
+    "lint": "npm run check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.12.4",
+    "svelte": "5.57.2"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "7.3.1",
+    "@tauri-apps/cli": "2.12.3",
+    "prettier": "3.9.10",
+    "prettier-plugin-svelte": "4.1.1",
+    "svelte-check": "4.7.6",
+    "typescript": "6.0.3",
+    "vite": "8.3.4"
+  }
+}

@@ -1,0 +1,4 @@
+   Compiling local-chat v0.1.0 (/Users/youssefsz/Desktop-apps/local-chat/src-tauri)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 3.08s
+     Running `src-tauri/target/debug/examples/context_probe`
+interface=en0 gateway_hardware_present=true context_recognizable=true generation=1

@@ -1,0 +1,25 @@
+{
+  "productName": "Local Chat Test",
+  "identifier": "app.localchat.desktop.qa",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Local Chat Test",
+        "width": 1280,
+        "height": 720,
+        "minWidth": 800,
+        "minHeight": 600,
+        "visible": false
+      }
+    ]
+  },
+  "bundle": {
+    "targets": [
+      "app"
+    ],
+    "macOS": {
+      "infoPlist": "Info.test.plist"
+    }
+  }
+}

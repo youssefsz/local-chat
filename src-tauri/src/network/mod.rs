@@ -1,0 +1,748 @@
+#[cfg(target_os = "macos")]
+mod discovery;
+#[cfg(not(target_os = "macos"))]
+mod discovery_unverified;
+mod tls;
+use crate::{
+    domain::*,
+    platform::{Identity, NetworkEvidence},
+    storage::Store,
+};
+use anyhow::{Context as _, Result, ensure};
+#[cfg(not(target_os = "macos"))]
+use discovery_unverified as discovery;
+use ed25519_dalek::Signer;
+use futures_util::{SinkExt, StreamExt};
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    net::{IpAddr, SocketAddr},
+    sync::{
+        Arc,
+        atomic::{AtomicU64, Ordering},
+    },
+    time::Duration,
+};
+use tokio::{
+    net::TcpSocket,
+    sync::{Mutex, broadcast},
+    time::{interval, timeout},
+};
+use tokio_util::{
+    codec::{Framed, LengthDelimitedCodec},
+    sync::CancellationToken,
+};
+
+fn valid_hex_key(value: &str) -> bool {
+    value.len() == 64
+        && value
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+type SequenceKey = (String, String, i64);
+#[derive(Clone, Debug)]
+pub enum Change {
+    State,
+    History,
+    Event(Event),
+    Received(Event, bool),
+}
+pub struct Engine {
+    pub store: Mutex<Store>,
+    pub identity: Identity,
+    pub peers: Mutex<HashMap<String, Peer>>,
+    pub status: Mutex<(String, String)>,
+    pub changes: broadcast::Sender<Change>,
+    pub stop: CancellationToken,
+    context_generation: AtomicU64,
+}
+impl Engine {
+    pub fn new(store: Store, identity: Identity) -> Arc<Self> {
+        let (changes, _) = broadcast::channel(256);
+        Arc::new(Self {
+            store: Mutex::new(store),
+            identity,
+            peers: Mutex::new(HashMap::new()),
+            status: Mutex::new(("discovering".into(), "Looking for a local network".into())),
+            changes,
+            stop: CancellationToken::new(),
+            context_generation: AtomicU64::new(crate::platform::network_generation()),
+        })
+    }
+    pub fn changed(&self) {
+        let _ = self.changes.send(Change::State);
+    }
+    pub async fn snapshot(&self) -> Result<Snapshot> {
+        let db = self.store.lock().await;
+        let mut status = self.status.lock().await.clone();
+        let peers: Vec<Peer> = self.peers.lock().await.values().cloned().collect();
+        if status.0 == "connected" && !peers.iter().any(|p| p.status == "connected") {
+            status = if peers.iter().any(|p| p.status == "reconnecting") {
+                (
+                    "reconnecting".into(),
+                    "Reconnecting to nearby computers".into(),
+                )
+            } else {
+                (
+                    "discovering".into(),
+                    "Looking for nearby computers. Your messages remain saved here.".into(),
+                )
+            };
+        }
+        Ok(Snapshot {
+            identity: self.identity.id(),
+            profile: db.meta("profile", "You")?,
+            theme: db.meta("theme", "system")?,
+            notifications: db.meta("notifications", "true")? == "true",
+            context: db.active.clone(),
+            contexts: db.contexts()?,
+            rooms: db.rooms(&db.active)?,
+            peers,
+            network_status: status.0,
+            network_detail: status.1,
+        })
+    }
+    pub async fn publish(&self, payload: Payload) -> Result<Event> {
+        let event = self
+            .store
+            .lock()
+            .await
+            .create(&self.identity.signing, payload)?;
+        let _ = self.changes.send(Change::Event(event.clone()));
+        Ok(event)
+    }
+    pub async fn run(self: Arc<Self>) {
+        let mut last: Option<NetworkEvidence> = None;
+        let mut current: Option<CancellationToken> = None;
+        let mut ticker = interval(Duration::from_millis(250));
+        let mut last_generation = 0;
+        let mut last_probe = std::time::Instant::now() - Duration::from_secs(30);
+        let mut previous_tick = std::time::Instant::now();
+        loop {
+            tokio::select! {_=self.stop.cancelled()=>break,_=ticker.tick()=>{
+                let resumed=previous_tick.elapsed()>Duration::from_secs(8);previous_tick=std::time::Instant::now();
+                let generation=crate::platform::network_generation();
+                if !resumed && generation==last_generation && last_probe.elapsed()<Duration::from_secs(10) && current.as_ref().is_some_and(CancellationToken::is_cancelled){continue}
+                if !resumed && generation==last_generation && last_probe.elapsed()<Duration::from_secs(10) && current.as_ref().is_some_and(|c|!c.is_cancelled()){continue}
+                let signal_changed=last_generation!=generation;
+                last_generation=generation;last_probe=std::time::Instant::now();
+                let evidence=tokio::task::spawn_blocking(crate::platform::network_evidence).await.ok().and_then(Result::ok);
+                if evidence!=last || resumed || signal_changed || current.as_ref().is_none_or(CancellationToken::is_cancelled){
+                    if let Some(cancel)=current.take(){cancel.cancel();}
+                    self.peers.lock().await.clear();
+                    *self.status.lock().await=("discovering".into(),"Checking the current network before sharing".into());self.changed();
+                    // Cancellation closes sockets before changing the active export context.
+                    if let Some(e)=evidence.clone(){
+                        let fingerprint=e.fingerprint();
+                        let activated=self.store.lock().await.activate(fingerprint.as_deref(),if fingerprint.is_some(){"Local network"}else{"Unrecognized network"});
+                        if activated.is_ok() && crate::platform::network_generation()==generation{self.context_generation.store(generation,Ordering::Release);let cancel=self.stop.child_token();current=Some(cancel.clone());let engine=self.clone();tokio::spawn(async move{if let Err(_err)=engine.clone().serve(e,cancel.clone()).await&& !cancel.is_cancelled(){*engine.status.lock().await=("unavailable".into(),"Local discovery is unavailable. Check Local Network access in System Settings. Retrying automatically.".into());engine.changed();cancel.cancel();}});}
+                    }else{*self.status.lock().await=("unavailable".into(),"Connect to Wi-Fi or Ethernet. VPN interfaces are not shared.".into());}
+                    last=evidence;self.changed();
+                }
+            }}
+        }
+        if let Some(cancel) = current {
+            cancel.cancel();
+        }
+        self.peers.lock().await.clear();
+    }
+    async fn serve(
+        self: Arc<Self>,
+        evidence: NetworkEvidence,
+        cancel: CancellationToken,
+    ) -> Result<()> {
+        let socket = TcpSocket::new_v4()?;
+        crate::platform::bind_physical_socket(&socket, &evidence.interface)?;
+        socket.bind(SocketAddr::new(IpAddr::V4(evidence.address), 0))?;
+        let listener = socket.listen(32)?;
+        let port = listener.local_addr()?.port();
+        let id = self.identity.id();
+        let mut discovery =
+            discovery::Discovery::start(&evidence, &id, &self.identity.fingerprint(), port)?;
+        let acceptor = tls::server(&self.identity)?;
+        let context = self.store.lock().await.active.clone();
+        *self.status.lock().await = (
+            "discovering".into(),
+            "Discovering nearby computers on this network".into(),
+        );
+        self.changed();
+        let mut dials: HashMap<String, (SocketAddr, String, CancellationToken)> = HashMap::new();
+        let mut sessions = tokio::task::JoinSet::new();
+        loop {
+            tokio::select! {
+                _=cancel.cancelled()=>break,
+                Some(_)=sessions.join_next(),if !sessions.is_empty()=>{},
+                incoming=listener.accept()=>{let (stream,address)=incoming?;if !matches!(address.ip(),IpAddr::V4(a) if evidence.permits(a))||sessions.len()>=32{continue}
+                    let acceptor=acceptor.clone();let engine=self.clone();let session_cancel=cancel.clone();let context=context.clone();
+                    sessions.spawn(async move{let _=tokio::select!{_=session_cancel.cancelled()=>Ok(()),result=async{
+                        let stream=timeout(Duration::from_secs(5),acceptor.accept(stream)).await??;
+                        let binding=stream.get_ref().1.export_keying_material([0u8;32],b"localchat identity v1",None)?;
+                        engine.session(stream,binding,None,context,session_cancel.clone()).await
+                    }=>result};});
+                },
+                event=discovery.receiver.recv()=>{match event.context("Discovery stopped")?{
+                    discovery::DiscoveryEvent::Resolved{peer,certificate:cert,address:ip,port}=>{
+                        if peer<=id||!valid_hex_key(&peer)||!valid_hex_key(&cert)||!evidence.permits(ip)||dials.len()>=19 && !dials.contains_key(&peer){continue}
+                        let endpoint=SocketAddr::new(IpAddr::V4(ip),port);
+                        if let Some((old_endpoint,old_cert,old_cancel))=dials.get(&peer){if *old_endpoint==endpoint && *old_cert==cert {continue}old_cancel.cancel();}
+                        let child=cancel.child_token();dials.insert(peer.clone(),(endpoint,cert.clone(),child.clone()));
+                        let engine=self.clone();let context=context.clone();let local=evidence.address;let interface=evidence.interface.clone();
+                        sessions.spawn(async move{let mut attempt=0u32;loop{if child.is_cancelled(){break}
+                            let result=tokio::select!{_=child.cancelled()=>break,result=async{
+                                let socket=TcpSocket::new_v4()?;crate::platform::bind_physical_socket(&socket,&interface)?;socket.bind(SocketAddr::new(IpAddr::V4(local),0))?;
+                                let tcp=timeout(Duration::from_secs(5),socket.connect(SocketAddr::new(IpAddr::V4(ip),port))).await??;
+                                let connector=tls::client(cert.clone());let stream=timeout(Duration::from_secs(5),connector.connect("localchat.local".try_into()?,tcp)).await??;
+                                let binding=stream.get_ref().1.export_keying_material([0u8;32],b"localchat identity v1",None)?;
+                                engine.clone().session(stream,binding,Some(peer.clone()),context.clone(),child.clone()).await
+                            }=>result};
+                            #[cfg(feature="test-profile")] if let Err(err)=&result { eprintln!("Test dial ended: {err}"); }
+                            if result.is_err(){engine.peers.lock().await.insert(peer.clone(),Peer{id:peer.clone(),name:"Nearby computer".into(),platform:String::new(),status:"reconnecting".into()});engine.changed();}
+                            attempt=attempt.saturating_add(1);let jitter=rand::random::<u64>()%500;
+                            tokio::select!{_=child.cancelled()=>break,_=tokio::time::sleep(Duration::from_millis((1u64<<attempt.min(5))*1000+jitter))=>{}}
+                        }});
+                    },
+                    discovery::DiscoveryEvent::Removed(fullname)=>{if let Some(peer)=dials.keys().find(|peer|fullname.contains(&peer[..16])).cloned(){if let Some((_,_,child))=dials.remove(&peer){child.cancel();}self.peers.lock().await.remove(&peer);self.changed();}},
+                    discovery::DiscoveryEvent::Failure(message)=>{self.store.lock().await.set_meta("last_discovery_error",&message)?;anyhow::bail!("Local discovery could not start. Allow Local Network access in System Settings. Local Chat retries automatically.");}
+                }}
+            }
+        }
+        cancel.cancel();
+        sessions.abort_all();
+        while sessions.join_next().await.is_some() {}
+        drop(discovery);
+        Ok(())
+    }
+    #[cfg(any(test, feature = "test-profile"))]
+    pub async fn connect_test(
+        self: Arc<Self>,
+        stream: tokio::net::TcpStream,
+        server: bool,
+        expected: Option<String>,
+        cert: String,
+        cancel: CancellationToken,
+    ) -> Result<()> {
+        let context = self.store.lock().await.active.clone();
+        if server {
+            let stream = tls::server(&self.identity)?.accept(stream).await?;
+            let binding = stream.get_ref().1.export_keying_material(
+                [0u8; 32],
+                b"localchat identity v1",
+                None,
+            )?;
+            self.session(stream, binding, expected, context, cancel)
+                .await
+        } else {
+            let stream = tls::client(cert)
+                .connect("localchat.local".try_into()?, stream)
+                .await?;
+            let binding = stream.get_ref().1.export_keying_material(
+                [0u8; 32],
+                b"localchat identity v1",
+                None,
+            )?;
+            self.session(stream, binding, expected, context, cancel)
+                .await
+        }
+    }
+    async fn session<T>(
+        self: Arc<Self>,
+        stream: T,
+        binding: [u8; 32],
+        expected: Option<String>,
+        context: String,
+        cancel: CancellationToken,
+    ) -> Result<()>
+    where
+        T: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin,
+    {
+        let generation = self.context_generation.load(Ordering::Acquire);
+        let codec = LengthDelimitedCodec::builder()
+            .max_frame_length(FRAME_BYTES)
+            .new_codec();
+        let mut wire = Framed::new(stream, codec);
+        let profile = self.store.lock().await.meta("profile", "You")?;
+        let id = self.identity.id();
+        let platform = std::env::consts::OS.to_string();
+        let signature = hex::encode(
+            self.identity
+                .signing
+                .sign(&serde_json::to_vec(&(
+                    PROTOCOL, &id, &profile, &platform, binding,
+                ))?)
+                .to_bytes(),
+        );
+        eligible_send(
+            &mut wire,
+            generation,
+            &Wire::Hello {
+                version: PROTOCOL,
+                id: id.clone(),
+                profile,
+                platform,
+                signature,
+            },
+        )
+        .await?;
+        let hello = timeout(Duration::from_secs(5), receive(&mut wire)).await??;
+        let Wire::Hello {
+            version,
+            id: peer,
+            profile,
+            platform,
+            signature,
+        } = hello
+        else {
+            anyhow::bail!("Expected authenticated hello")
+        };
+        ensure!(version == PROTOCOL && peer != id, "Incompatible peer");
+        ensure!(
+            expected.as_ref().is_none_or(|e| e == &peer),
+            "Peer identity mismatch"
+        );
+        validate_name(&profile)?;
+        ensure!(platform.len() <= 32, "Invalid platform");
+        verify(
+            &peer,
+            &serde_json::to_vec(&(version, &peer, &profile, &platform, binding))?,
+            &signature,
+        )?;
+        {
+            let mut peers = self.peers.lock().await;
+            ensure!(
+                peers.get(&peer).is_none_or(|p| p.status != "connected"),
+                "Duplicate peer session"
+            );
+            peers.insert(
+                peer.clone(),
+                Peer {
+                    id: peer.clone(),
+                    name: profile,
+                    platform,
+                    status: "connected".into(),
+                },
+            );
+        }
+        *self.status.lock().await = ("connected".into(), "Connected on your local network".into());
+        self.changed();
+        let result=async{
+            let mut changes=self.changes.subscribe();let mut tick=interval(Duration::from_secs(10));let mut sent_digest=String::new();let mut requested_digest=String::new();let mut last_rx=std::time::Instant::now();
+            loop{
+                ensure!(!cancel.is_cancelled() && crate::platform::network_generation()==generation,"Network session expired");
+                ensure!(self.store.lock().await.active==context,"Network context changed");
+                tokio::select!{
+                    _=cancel.cancelled()=>break,
+                    _=tick.tick()=>{ensure!(last_rx.elapsed()<Duration::from_secs(35),"Peer liveness timeout");let digest=self.store.lock().await.digest()?;if digest!=sent_digest{eligible_send(&mut wire,generation,&Wire::Summary{digest:digest.clone()}).await?;sent_digest=digest;}else{eligible_send(&mut wire,generation,&Wire::Ping).await?;}},
+                    change=changes.recv()=>{match change?{Change::Event(e)=>{eligible_send(&mut wire,generation,&Wire::Events{events:vec![e],live:true}).await?;},Change::Received(_,_)|Change::State|Change::History=>{}}},
+                    packet=receive(&mut wire)=>{let packet=packet?;last_rx=std::time::Instant::now();
+                        // Each operation holds the database lock through its context check.
+                        let mut db=self.store.lock().await;ensure!(db.active==context&&!cancel.is_cancelled()&&crate::platform::network_generation()==generation,"Context no longer eligible");
+                        match packet{
+                            Wire::Summary{digest}=>{ensure!(digest.len()==64,"Invalid summary");if digest!=db.digest()? && digest!=requested_digest{requested_digest=digest;drop(db);eligible_send(&mut wire,generation,&Wire::InventoryRequest{offset:0}).await?;}},
+                            Wire::InventoryRequest{offset}=>{let entries=db.inventory(offset)?;drop(db);eligible_send(&mut wire,generation,&Wire::Inventory{offset,entries}).await?;},
+                            Wire::Inventory{offset,entries}=>{ensure!(entries.len()<=512,"Oversized inventory");let missing=db.missing(&entries)?;drop(db);for batch in missing.chunks(BATCH_SIZE){eligible_send(&mut wire,generation,&Wire::Need{entries:batch.to_vec()}).await?;}if entries.len()==512{eligible_send(&mut wire,generation,&Wire::InventoryRequest{offset:offset.checked_add(512).context("Inventory offset overflow")?}).await?;}},
+                            Wire::Need{entries}=>{let events=db.export(&entries)?;drop(db);eligible_send(&mut wire,generation,&Wire::Events{events,live:false}).await?;},
+                            Wire::Events{events,live}=>{ensure!(events.len()<=BATCH_SIZE,"Oversized event batch");let mut acks=Vec::new();let mut received=Vec::new();for event in events{if db.ingest(&event)?{received.push(event.clone());}acks.push(event.id);}drop(db);eligible_send(&mut wire,generation,&Wire::Ack{ids:acks}).await?;if live { for event in received{let _=self.changes.send(Change::Received(event,true));} } else if !received.is_empty(){let _=self.changes.send(Change::History);}},
+                            Wire::Ack{ids}=>{ensure!(ids.len()<=BATCH_SIZE,"Oversized acknowledgement");for id in ids{db.acknowledge(&id,&peer)?;}drop(db);let _=self.changes.send(Change::History);},
+                            Wire::Ping=>{drop(db);eligible_send(&mut wire,generation,&Wire::Pong).await?;},Wire::Pong=>{},Wire::Hello{..}=>anyhow::bail!("Repeated hello")
+                        }
+                    }
+                }
+            }Ok(())
+        }.await;
+        self.peers.lock().await.remove(&peer);
+        self.changed();
+        result
+    }
+}
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+enum Wire {
+    Hello {
+        version: u16,
+        id: String,
+        profile: String,
+        platform: String,
+        signature: String,
+    },
+    Summary {
+        digest: String,
+    },
+    InventoryRequest {
+        offset: usize,
+    },
+    Inventory {
+        offset: usize,
+        entries: Vec<SequenceKey>,
+    },
+    Need {
+        entries: Vec<SequenceKey>,
+    },
+    Events {
+        events: Vec<Event>,
+        live: bool,
+    },
+    Ack {
+        ids: Vec<String>,
+    },
+    Ping,
+    Pong,
+}
+async fn eligible_send<T>(
+    wire: &mut Framed<T, LengthDelimitedCodec>,
+    generation: u64,
+    packet: &Wire,
+) -> Result<()>
+where
+    T: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin,
+{
+    ensure!(
+        crate::platform::network_generation() == generation,
+        "Network changed before export"
+    );
+    send(wire, packet).await
+}
+async fn send<T>(wire: &mut Framed<T, LengthDelimitedCodec>, packet: &Wire) -> Result<()>
+where
+    T: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin,
+{
+    let bytes = serde_json::to_vec(packet)?;
+    if bytes.len() > FRAME_BYTES
+        && let Wire::Events { events, live } = packet
+        && events.len() > 1
+    {
+        for event in events {
+            let frame = serde_json::to_vec(&Wire::Events {
+                events: vec![event.clone()],
+                live: *live,
+            })?;
+            ensure!(frame.len() <= FRAME_BYTES, "Event exceeds frame limit");
+            timeout(Duration::from_secs(5), wire.send(frame.as_slice())).await??;
+        }
+        return Ok(());
+    }
+    ensure!(bytes.len() <= FRAME_BYTES, "Frame too large");
+    timeout(Duration::from_secs(5), wire.send(bytes.as_slice())).await??;
+    Ok(())
+}
+async fn receive<T>(wire: &mut Framed<T, LengthDelimitedCodec>) -> Result<Wire>
+where
+    T: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin,
+{
+    let bytes = wire.next().await.context("Peer disconnected")??;
+    Ok(serde_json::from_slice(&bytes)?)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::net::Ipv4Addr;
+    use tokio::net::{TcpListener, TcpStream};
+    fn peer() -> (tempfile::TempDir, Arc<Engine>) {
+        let dir = tempfile::tempdir().unwrap();
+        let identity = Identity::load(dir.path(), true).unwrap();
+        let mut db = Store::open(&dir.path().join("db.sqlite3")).unwrap();
+        db.activate(Some("test-network"), "Test LAN").unwrap();
+        db.set_meta("profile", "Test peer").unwrap();
+        (dir, Engine::new(db, identity))
+    }
+    async fn connect(
+        a: Arc<Engine>,
+        b: Arc<Engine>,
+        cancel: CancellationToken,
+    ) -> Vec<tokio::task::JoinHandle<Result<()>>> {
+        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let cert = b.identity.fingerprint();
+        let expected = b.identity.id();
+        let child = cancel.clone();
+        let server = tokio::spawn(async move {
+            let (tcp, _) = listener.accept().await?;
+            b.connect_test(tcp, true, None, String::new(), child).await
+        });
+        let client = tokio::spawn(async move {
+            let tcp = TcpStream::connect(addr).await?;
+            a.connect_test(tcp, false, Some(expected), cert, cancel)
+                .await
+        });
+        vec![server, client]
+    }
+    async fn wait_count(peers: &[Arc<Engine>], count: usize) {
+        timeout(Duration::from_secs(30), async {
+            loop {
+                let mut ready = true;
+                for peer in peers {
+                    let db = peer.store.lock().await;
+                    if db.messages(&db.active, GENERAL, None, None).unwrap().len() != count {
+                        ready = false;
+                        break;
+                    }
+                }
+                if ready {
+                    return;
+                }
+                tokio::time::sleep(Duration::from_millis(30)).await
+            }
+        })
+        .await
+        .expect("Peers failed to converge");
+    }
+    async fn mesh(count: usize) {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let nodes = (0..count).map(|_| peer()).collect::<Vec<_>>();
+        let peers = nodes.iter().map(|(_, e)| e.clone()).collect::<Vec<_>>();
+        let cancel = CancellationToken::new();
+        let mut tasks = Vec::new();
+        for i in 0..count {
+            for j in i + 1..count {
+                tasks.extend(connect(peers[i].clone(), peers[j].clone(), cancel.clone()).await);
+            }
+        }
+        timeout(Duration::from_secs(20), async {
+            loop {
+                let mut all = true;
+                for p in &peers {
+                    if p.peers.lock().await.len() != count - 1 {
+                        all = false;
+                        break;
+                    }
+                }
+                if all {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            }
+        })
+        .await
+        .unwrap();
+        for (i, p) in peers.iter().enumerate() {
+            p.publish(Payload::Message {
+                room: GENERAL.into(),
+                content: format!("Concurrent message {i}"),
+                mode: MessageMode::Text,
+            })
+            .await
+            .unwrap();
+        }
+        wait_count(&peers, count).await;
+        cancel.cancel();
+        for task in tasks {
+            let _ = task.await;
+        }
+        println!("{count} real TLS peers converged");
+    }
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn two_five_twenty_encrypted_peers() {
+        for count in [2, 5, 20] {
+            mesh(count).await;
+        }
+    }
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn reconnect_relay_restart_and_context_change() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let (_da, a) = peer();
+        let (db_dir, b) = peer();
+        let cancel = CancellationToken::new();
+        let tasks = connect(a.clone(), b.clone(), cancel.clone()).await;
+        a.publish(Payload::Message {
+            room: GENERAL.into(),
+            content: "recover from relay".into(),
+            mode: MessageMode::Code,
+        })
+        .await
+        .unwrap();
+        wait_count(&[a.clone(), b.clone()], 1).await;
+        cancel.cancel();
+        for t in tasks {
+            let _ = t.await;
+        }
+        drop(b);
+        let identity = Identity::load(db_dir.path(), true).unwrap();
+        let mut store = Store::open(&db_dir.path().join("db.sqlite3")).unwrap();
+        store.activate(Some("test-network"), "Test LAN").unwrap();
+        let b = Engine::new(store, identity);
+        let (_dc, c) = peer();
+        let cancel = CancellationToken::new();
+        let tasks = connect(b.clone(), c.clone(), cancel.clone()).await;
+        wait_count(std::slice::from_ref(&c), 1).await;
+        cancel.cancel();
+        for t in tasks {
+            let _ = t.await;
+        }
+        c.store
+            .lock()
+            .await
+            .activate(Some("different-network"), "Other LAN")
+            .unwrap();
+        assert!(c.store.lock().await.inventory(0).unwrap().is_empty());
+        assert!(
+            c.store
+                .lock()
+                .await
+                .export(&a.store.lock().await.inventory(0).unwrap())
+                .unwrap()
+                .is_empty()
+        );
+    }
+    #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+    async fn interrupted_multi_page_sync_resumes_without_original_sender() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let (_da, a) = peer();
+        let (_db, b) = peer();
+        for i in 0..600 {
+            a.publish(Payload::Message {
+                room: GENERAL.into(),
+                content: format!("Historical event {i}"),
+                mode: MessageMode::Text,
+            })
+            .await
+            .unwrap();
+        }
+        let cancel = CancellationToken::new();
+        let tasks = connect(a.clone(), b.clone(), cancel.clone()).await;
+        timeout(Duration::from_secs(10), async {
+            loop {
+                if b.store.lock().await.inventory(0).unwrap().len() >= 8 {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        cancel.cancel();
+        for t in tasks {
+            let _ = t.await;
+        }
+        let cancel = CancellationToken::new();
+        let tasks = connect(a.clone(), b.clone(), cancel.clone()).await;
+        timeout(Duration::from_secs(20), async {
+            loop {
+                if a.store.lock().await.digest().unwrap() == b.store.lock().await.digest().unwrap()
+                {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            }
+        })
+        .await
+        .unwrap();
+        cancel.cancel();
+        for t in tasks {
+            let _ = t.await;
+        }
+        drop(a);
+        let (_dc, c) = peer();
+        let cancel = CancellationToken::new();
+        let tasks = connect(b.clone(), c.clone(), cancel.clone()).await;
+        timeout(Duration::from_secs(20), async {
+            loop {
+                if b.store.lock().await.digest().unwrap() == c.store.lock().await.digest().unwrap()
+                {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(20)).await;
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(c.store.lock().await.inventory(0).unwrap().len(), 512);
+        assert_eq!(c.store.lock().await.inventory(512).unwrap().len(), 88);
+        cancel.cancel();
+        for t in tasks {
+            let _ = t.await;
+        }
+    }
+    #[tokio::test]
+    async fn escaped_maximum_messages_split_into_bounded_frames() {
+        let (_dir, engine) = peer();
+        let mut events = Vec::new();
+        for _ in 0..BATCH_SIZE {
+            events.push(
+                engine
+                    .publish(Payload::Message {
+                        room: GENERAL.into(),
+                        content: "\0".repeat(MESSAGE_BYTES),
+                        mode: MessageMode::Code,
+                    })
+                    .await
+                    .unwrap(),
+            );
+        }
+        let (a, b) = tokio::io::duplex(FRAME_BYTES * 2);
+        let mut sender = Framed::new(
+            a,
+            LengthDelimitedCodec::builder()
+                .max_frame_length(FRAME_BYTES)
+                .new_codec(),
+        );
+        let task = tokio::spawn(async move {
+            send(
+                &mut sender,
+                &Wire::Events {
+                    events,
+                    live: false,
+                },
+            )
+            .await
+            .unwrap();
+        });
+        let mut receiver = Framed::new(
+            b,
+            LengthDelimitedCodec::builder()
+                .max_frame_length(FRAME_BYTES)
+                .new_codec(),
+        );
+        let mut count = 0;
+        while count < BATCH_SIZE {
+            let Wire::Events { events, .. } = receive(&mut receiver).await.unwrap() else {
+                panic!("Expected event frame")
+            };
+            for event in events {
+                assert_eq!(
+                    match event.payload {
+                        Payload::Message { content, .. } => content.len(),
+                        _ => 0,
+                    },
+                    MESSAGE_BYTES
+                );
+                count += 1;
+            }
+        }
+        task.await.unwrap();
+    }
+    #[tokio::test]
+    async fn oversized_length_prefix_is_rejected_before_payload_allocation() {
+        use tokio::io::AsyncWriteExt;
+        let (mut a, b) = tokio::io::duplex(32);
+        a.write_all(&((FRAME_BYTES + 1) as u32).to_be_bytes())
+            .await
+            .unwrap();
+        let mut receiver = Framed::new(
+            b,
+            LengthDelimitedCodec::builder()
+                .max_frame_length(FRAME_BYTES)
+                .new_codec(),
+        );
+        assert!(receive(&mut receiver).await.is_err());
+    }
+    #[tokio::test]
+    async fn wrong_tls_pin_is_rejected() {
+        let _ = rustls::crypto::ring::default_provider().install_default();
+        let (_d, a) = peer();
+        let (_e, b) = peer();
+        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        let task = tokio::spawn(async move {
+            let (tcp, _) = listener.accept().await.unwrap();
+            b.connect_test(tcp, true, None, String::new(), CancellationToken::new())
+                .await
+        });
+        let tcp = TcpStream::connect(addr).await.unwrap();
+        assert!(
+            a.connect_test(tcp, false, None, "00".repeat(32), CancellationToken::new())
+                .await
+                .is_err()
+        );
+        let _ = task.await;
+    }
+}

@@ -1,0 +1,13 @@
+{
+  "build": "final Developer ID signed arm64 release",
+  "date": "2026-10-15",
+  "launch": "Finder launch after replacing installed app, warm OS and keychain caches",
+  "measurements": {
+    "last_launch_ms": "494.386666",
+    "startup_identity_ready_ms": "247.884416",
+    "startup_setup_end_ms": "264.92479099999997",
+    "startup_setup_enter_ms": "236.884708",
+    "theme": "system"
+  },
+  "unit": "milliseconds from Rust run entry; excludes LaunchServices time before process start"
+}

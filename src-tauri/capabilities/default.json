@@ -1,0 +1,25 @@
+{
+  "identifier": "default",
+  "description": "Local Chat window permissions",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "core:window:allow-show",
+    "core:window:allow-set-theme",
+    "clipboard-manager:allow-write-text",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "http://*"
+        },
+        {
+          "url": "https://*"
+        }
+      ]
+    },
+    "notification:default"
+  ]
+}
