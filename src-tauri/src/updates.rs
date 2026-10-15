@@ -8,6 +8,12 @@ pub enum Channel {
     Beta,
 }
 impl Channel {
+    pub fn feed(self) -> &'static str {
+        match self {
+            Self::Stable => "stable",
+            Self::Beta => "beta-public",
+        }
+    }
     pub fn name(self) -> &'static str {
         match self {
             Self::Stable => "stable",
@@ -57,6 +63,8 @@ mod tests {
         assert!(!Channel::Beta.accepts("invalid"));
         assert_eq!(Channel::saved("", "0.1.0-beta.6"), Channel::Beta);
         assert_eq!(Channel::saved("", "0.1.0"), Channel::Stable);
+        assert_eq!(Channel::Beta.feed(), "beta-public");
+        assert_eq!(Channel::Stable.feed(), "stable");
         assert!(due(10, 0, 0));
         assert!(!due(100, 0, 90));
         assert!(!due(86_500, 86_000, 0));

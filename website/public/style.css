@@ -218,7 +218,7 @@ img {
   align-items: center;
   gap: 10px;
   padding: 20px 24px;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--line); /* taste-skill-ignore: intrinsic app fragment chrome */
 }
 .demo-header > span:last-child {
   margin-left: auto;
@@ -461,9 +461,6 @@ img {
   grid-template-columns: 64px minmax(0, 1fr);
   gap: 24px;
   padding: 44px 0;
-}
-.platform + .platform {
-  border-top: 1px solid var(--line);
 }
 .platform img {
   margin-top: 4px;
@@ -742,10 +739,8 @@ img {
     overflow: hidden;
   }
   .app-showcase img {
-    width: 760px;
-    max-width: none;
+    width: 100%;
     height: auto;
-    transform: translateX(-18px);
   }
   .app-showcase figure > a {
     display: block;
@@ -902,7 +897,7 @@ img {
     border: 1px solid var(--line);
     border-radius: 6px;
     padding: 16px;
-    box-shadow: 0 8px 24px #292b2914;
+    box-shadow: 0 8px 24px #292b2914; /* taste-skill-ignore: open navigation overlay */
     display: flex;
     align-items: stretch;
     flex-direction: column;

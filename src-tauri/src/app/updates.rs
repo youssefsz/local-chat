@@ -166,7 +166,7 @@ impl Service {
     ) -> Result<tauri_plugin_updater::Updater> {
         let endpoint = format!(
             "https://raw.githubusercontent.com/youssefsz/local-chat/updates/{}.json",
-            channel.name()
+            channel.feed()
         );
         let builder = app
             .updater_builder()
