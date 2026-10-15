@@ -81,6 +81,26 @@ The moved integration harness also passed real process groups of 2, 5, and 20, p
 Svelte diagnostics, Clippy, workflow syntax, local documentation links, and public-tree checks passed.
 The published beta.6 history produced a release-note preview with verified attribution and the correct beta.5 comparison base.
 
+## Public 0.0.1 and website verification
+
+The [0.0.1 release workflow](https://github.com/youssefsz/local-chat/actions/runs/38783989701) passed all three platforms and published ten assets at source commit `cf568c5`. Initial Mac ticket lookups lost their Apple network connection; a rerun passed without changing the tag or removing validation. The [subsequent main CI](https://github.com/youssefsz/local-chat/actions/runs/38788077101) also passed all three targets.
+
+Downloaded Mac files matched `SHA256SUMS`. The actual updater verifier accepted the package signature and authenticated version. The app and DMG passed local stapled-ticket checks; the app passed strict code-signature verification and Gatekeeper as Notarized Developer ID. The verified bundle replaced the installed beta while leaving its app data directory in place. Production Settings showed 0.0.1, a manual Stable check reported up to date, and its Privacy link opened the public policy in the system browser. This was a manual beta-to-stable installation, not a new automated updater-installation test.
+
+Website commands:
+
+```sh
+npm --prefix website ci
+npm --prefix website run build
+npm --prefix website test
+```
+
+Five Node tests pass for page metadata/local links, complete stable-release validation, metadata caching/error behavior, allowed requests, and download redirects/fallbacks. The Workers dry run passed. The live six content routes returned 200, `.html` and trailing-slash privacy URLs redirected to `/privacy`, and missing routes returned 404. The public release endpoint returned 0.0.1; all four download endpoints redirected to the exact published installers.
+
+A merged website change automatically triggered Cloudflare Workers Builds on `main`, deployed successfully, and changed the production content. Its watch path is `website/**`; website changes do not create an app release.
+
+Manual browser checks covered desktop 1440px, tablet 768px, mobile 390px, and the 1280px working viewport. The revised centered hero has no horizontal overflow, retains the complete native screenshot on mobile, and uses an eager high-priority image. Light/Dark selection updates the image, pressed state, and full-size destination. The hero Download action reaches the platform download page. The requested decorative macOS frame keeps its title bar and rim matched to the selected Light/Dark image, and its static traffic-light dots are hidden from assistive technology. The screenshot link receives a visible 2px terracotta outline outside the clipped frame when focused with the keyboard. Light and Dark screenshot assets were recaptured from a fresh isolated preview window with decorations disabled for capture only; both 2560×1800 images were visually checked for cursor and computer-use indicator artifacts. This is manual browser evidence, not an automated frontend interaction suite. Existing platform and physical-LAN limitations below still apply.
+
 ## Pending physical and interaction checks
 
 - Two physical computers across the intended router with internet disconnected.

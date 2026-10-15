@@ -23,8 +23,8 @@
 </p>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/dark-1280x720.jpg">
-  <img src="docs/screenshots/light-1280x720.jpg" alt="Local Chat on macOS with shared rooms, a conversation, and a code snippet" width="1280">
+  <source media="(prefers-color-scheme: dark)" srcset="website/public/assets/app-dark.jpg">
+  <img src="website/public/assets/app-light.jpg" alt="Local Chat on macOS with shared rooms, a conversation, and a code snippet" width="1280">
 </picture>
 
 *The native app with synthetic conversations. Screenshots contain no private chat history.*

@@ -12,8 +12,6 @@ colors:
   line: "#e9e7e2"
   dark: "#202422"
   dark-ink: "#e4e9e2"
-  code: "#252a29"
-  code-ink: "#e6eae4"
 typography:
   display:
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
@@ -34,14 +32,8 @@ typography:
     fontSize: "16px"
     fontWeight: 550
     lineHeight: 1.5
-  code:
-    fontFamily: "ui-monospace, SFMono-Regular, Consolas, monospace"
-    fontSize: "12px"
-    lineHeight: 1.85
 rounded:
   control: "6px"
-  code: "8px"
-  demo: "10px"
 spacing:
   margin: "clamp(20px, 4vw, 64px)"
   16: "16px"
@@ -65,9 +57,11 @@ components:
 
 ## Overview
 
-The website extends the existing app world recorded in [the root design system](../DESIGN.md). Warm paper, system fonts, terracotta actions, compact app fragments, and green-gray dark panels carry Local Chat's identity. The root product and design documents remain authoritative for the desktop app.
+The website extends the existing app world recorded in [the root design system](../DESIGN.md). Warm paper, system fonts, terracotta actions, and native app captures carry Local Chat's identity. The root product and design documents remain authoritative for the desktop app.
 
-The selected direction is "The product performs." The home page uses Persuade mode for small groups sharing a local network. Visitors can copy a labeled example, inspect the real desktop app, and download it. Getting started, release notes, privacy, and terms use Read mode with clear headings and bounded text columns. These are website choices, not changes to the app's Operate layout.
+The selected direction is "The product performs." The home page uses Persuade mode for small groups sharing a local network. A centered headline, supporting copy, and download action lead directly into a large native app capture. The original factual hero copy remains intact. Getting started, release notes, privacy, and terms use Read mode with clear headings and bounded text columns. These are website choices, not changes to the app's Operate layout.
+
+The centered hero uses the [Spline reference on Mobbin](https://mobbin.com/sites/sections/3bf8e20b-ba8a-464a-a774-bb107f225557) for composition only. It borrows no assets or typography. This is a layout refinement within the existing brand.
 
 The implementation is plain HTML, CSS, and browser JavaScript. There is no approved website comp. The current pages and stylesheet record the implemented composition; the approved app HTML under `docs/reference` stays untouched.
 
@@ -75,33 +69,35 @@ The implementation is plain HTML, CSS, and browser JavaScript. There is no appro
 
 Terracotta identifies primary download actions, active navigation, link hover, and keyboard focus. Its darker hover value gives pressed controls a familiar app treatment. The pale terracotta wash separates the network explanation and marks text selection.
 
-Warm paper is the default page background; white contains the example conversation. Dark green-gray creates a full-width stage for screenshots of both app appearances. Ink and secondary text separate headings from supporting copy; quiet lines belong to app fragment chrome and the mobile navigation overlay. Code retains the app's dark panel and pale text.
+Warm paper is the page background; white contains the mobile navigation overlay. Ink and secondary text separate headings from supporting copy. Quiet lines frame the app preview and navigation overlay, and fill the selected appearance control. Light and dark colors belong to the native capture and its surrounding window frame; the rest of the website keeps its light palette.
 
 **The inherited identity rule.** Keep the app's system fonts and palette when extending this website. The user's requirement to match the app takes precedence over generic font or palette exclusions.
 
 ## Typography
 
-The system sans-serif stack handles display, navigation, and reading. System monospace handles code. No font download is required. Display headings use the frontmatter scale and tight tracking; body text keeps the app's familiar forms at a larger reading size.
+The system sans-serif stack handles display, navigation, and reading. No font download is required. Display headings use the frontmatter scale and tight tracking; body text keeps the app's familiar forms at a larger reading size.
 
-The wordmark is 21px at weight 650. Introductory copy is 20px or 21px. Supporting text is 13px to 15px. Reading headings use 30px with a 1.2 line height, and prose is at most 66ch wide. Code uses the frontmatter role inside the example. At 600px and below, body text becomes 16px, the home headline becomes 50px, other page titles become 44px, and code becomes 11px.
+The wordmark is 21px at weight 650. Introductory copy is 20px or 21px. Supporting text is 13px to 15px. Reading headings use 30px with a 1.2 line height, and prose is at most 66ch wide. The desktop hero headline fits on one line. At 600px and below, body text becomes 16px, the home headline becomes 50px with a 10ch maximum width and two lines, and other page titles become 44px.
 
 ## Layout
 
-The home page pairs copy with the interactive example in a 5:6 grid with a 6vw gap. Related explanations and the closing download action repeat that alignment. Large section intervals give the public page room to read while the demonstration keeps the app's compact message density. Horizontal margins follow the frontmatter margin token. The body caps at 1920px on wide displays.
+The hero stays in one centered column at every width. Its copy has an 800px maximum width, with supporting text capped at 48ch. It starts 48px below the header, with 24px between the headline and body, 24px before Download, and 16px before the compatibility note. Horizontal margins follow the frontmatter margin token. The body caps at 1920px on wide displays.
 
-At 900px and below, the hero stacks and its example shifts inward by 15%. Supporting sections keep two columns until 600px. At 600px and below, margins become 20px, home sections stack, the example loses its offset, and the header exposes a native Menu disclosure alongside Download. The desktop navigation links remain available inside the menu.
+The framed native app capture follows the copy after 40px and caps at 1120px. It scales as a complete image with automatic height. Mobile never crops the desktop composition to make it appear larger. A caption and visible "View full-size screenshot" link sit below it, opposite the Light/Dark control group. Both the image link and full-size link open the selected capture.
 
-The screenshot always scales as a complete image. Mobile never crops the desktop composition to make it appear larger. Both the image link and the visible "View full-size screenshot" link open the selected capture.
+The introduction, explanations, FAQ, and closing download section retain their 5:6 desktop grids with a 6vw gap. At 900px and below, those sections use equal columns with 32px or 40px gaps; the hero remains centered.
+
+At 600px and below, margins become 20px. The hero starts 40px below the header, supporting copy becomes 18px with a 30ch maximum width and 20px top gap, and the image follows after 36px. The caption and controls stack with a 12px gap and align left beneath the full image. Supporting home sections stack. The header exposes a native Menu disclosure alongside Download, with the desktop navigation links inside the menu.
 
 Guide and release pages use a 1:2 grid. Guide navigation sticks near the top while reading on desktop; at 600px it returns to normal flow above the article. Legal text uses the same bounded prose column and loses its desktop left offset on mobile. Download rows pair platform marks and platform information; mobile places each download button below its description.
 
 ## Elevation & Depth
 
-Pages use flat fills and open spacing. The demonstration uses one quiet border. Screenshots retain their native window chrome. Only the open mobile navigation panel adds a small shadow, `0 8px 24px #292b2914`, to separate its overlay from the page.
+Pages use flat fills and open spacing. The app preview has one quiet outer rim and a separator beneath its decorative window bar. It has no shadow or glow. Only the open mobile navigation panel adds a small shadow, `0 8px 24px #292b2914`, to separate its overlay from the page.
 
 ## Shapes
 
-Controls and screenshots use the control radius. The example conversation and softly squared initials use the demo radius; code uses the code radius. Keep platform marks and the Local Chat logo intact. Ordinary explanatory sections remain open page content.
+Controls use the control radius. The app preview frame has 10px outer corners, becoming 8px at 600px and below, and clips its contents to that outline. Keep platform marks and the Local Chat logo intact. Ordinary explanatory sections remain open page content.
 
 ## Components
 
@@ -111,15 +107,23 @@ Download links use the primary button with a 48px minimum height. Hover deepens 
 
 The footer keeps GitHub, Privacy, Terms, and Support available across pages. Download platform marks identify compatibility. Apple and Linux assets come from Simple Icons; Windows uses the four-panel silhouette. Asset provenance and deployment configuration live in [README.md](README.md).
 
-### Copy example
-
-The home conversation fragment is explicitly labeled as an example. Its persistent "Copy code" button copies the code element's exact text, including whitespace. Success changes the button to "Copied" for 1500ms and announces confirmation through a status region. Clipboard failure announces how to select and copy manually. The code remains selectable, and narrow screens wrap its presentation without changing copied content. The fragment does not simulate discovery or send messages.
+The frame takes a terracotta outline when its screenshot link has focus, keeping keyboard focus visible outside the clipped window edges.
 
 ### Native app captures
 
-Light and Dark buttons form a labeled group with `aria-pressed` state. Selection updates the image, descriptive alternative text, image link, and visible full-size link. It changes the displayed capture only; the website keeps its light page appearance and saves no preference.
+The hero uses the native app image directly, without a fabricated HTML conversation or interactive code-copy demonstration. The image loads eagerly with high fetch priority and explicit intrinsic dimensions.
 
-`public/assets/app-light.jpg` and `app-dark.jpg` are native macOS captures from an isolated 0.0.1 preview profile. Each is 2560 by 1600 pixels, displayed with 1280 by 800 intrinsic HTML dimensions. They show synthetic Alex workshop messages, General and Workshop rooms, an honest zero connected peers count, waiting-for-peers delivery labels, and a blank composer. They publish no real conversation. The captured pointer in the native title bar is part of the source capture. These images demonstrate appearance, not cross-platform or physical multi-computer verification.
+Light and Dark buttons below the image form a labeled group with `aria-pressed` state. Each has a 44px minimum height; the selected button uses a neutral fill and hover uses the accent wash. Selection updates the image, descriptive alternative text, image link, visible full-size link, and the surrounding frame's `data-theme`. It changes the preview appearance only; the website keeps its light page appearance and saves no preference.
+
+`public/assets/app-light.jpg` and `app-dark.jpg` are native macOS captures from an isolated 0.0.1 preview profile. Each is 2560 by 1800 pixels, displayed with 1280 by 900 intrinsic HTML dimensions. They show synthetic Alex workshop messages, General and Workshop rooms, an honest zero connected peers count, waiting-for-peers delivery labels, and a blank composer. They publish no real conversation. A dedicated test-profile bundle sets `decorations: false` only for capture, excluding the operating-system title bar and control badge. Each appearance is captured immediately after a fresh launch, before computer-use input can add a pointer overlay. Both images show the full app content without cropping or retouching, with no cursor or badge. The production app retains its native window decorations. These images demonstrate appearance, not cross-platform or physical multi-computer verification.
+
+### Decorative app frame
+
+At the user's request, an HTML macOS-style frame surrounds the unchanged native JPEG. The `app-window` wrapper owns the preview's Light or Dark theme. Its window bar is `aria-hidden="true"`; the three static CSS traffic dots are decoration, with no button or window-management behavior. A centered "Local Chat" label uses 12px system text at weight 500.
+
+The desktop bar is 34px high with 12px side padding. Its dots are 10px wide, separated by 7px, in red `#ff5f57`, yellow `#febc2e`, and green `#28c840`. At 600px and below, the bar becomes 28px high with 10px side padding, the label becomes 11px, and the dots become 8px with 5px gaps.
+
+Light appearance uses a `#faf9f7` bar, the existing line color for its one-pixel rim and separator, and secondary text for its label. Dark appearance uses a `#272c29` bar, `#353c36` rim and separator, and `#b0b8ad` label. This frame is a decorative website surround. The raw captures stay title-bar-free, pointer-free, and uncropped, and the production native UI is unchanged.
 
 ### Reading and release content
 
@@ -132,10 +136,12 @@ Motion is limited to button hover and press feedback with 140ms transitions. Con
 ## Do's and Don'ts
 
 - Do preserve the inherited system typography, warm neutrals, and terracotta actions.
-- Do distinguish the interactive example from real app captures and label sample content.
+- Do label the native capture's sample messages and keep its provenance explicit.
 - Do keep full desktop screenshots visible on mobile with an explicit full-size link.
-- Do retain keyboard focus, copy feedback, disclosure semantics, and useful release fallbacks.
+- Do retain keyboard focus, appearance state, disclosure semantics, and useful release fallbacks.
 - Don't publish private messages or treat synthetic screenshots as connection evidence.
 - Don't add fabricated testimonials, user counts, pricing, or signup steps.
-- Don't replace native screenshots with an imitation operating-system window or alter the approved app reference.
+- Do allow the requested decorative macOS frame around the real capture, with static dots and no window-management behavior.
+- Don't add operating-system control badges, cursors, or fabricated app content to the preview.
+- Don't alter the approved app reference or production native window chrome to match the website frame.
 - Don't infer Windows or Linux desktop verification from macOS imagery.
