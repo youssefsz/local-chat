@@ -16,10 +16,10 @@ class ReleaseNotes(unittest.TestCase):
     def test_attribution_uses_verified_authors_without_publishing_emails(self):
         commits = [{'author': {'login': 'contributor', 'type': 'User'}, 'commit': {
             'author': {'name': 'Ignored email guess'},
-            'message': 'Fix\n\nCo-authored-by: Second Author <private@example.invalid>'}},
+            'message': 'Fix\n\nCo-authored-by: Zoë Contributor <private@example.invalid>'}},
             {'author': None, 'commit': {'author': {'name': 'Unlinked Author'}, 'message': 'Fix'}},
             {'author': {'login': 'automation[bot]', 'type': 'Bot'}, 'commit': {'author': {'name': 'Bot'}, 'message': 'Update'}}]
-        self.assertEqual(contributors(commits), ['@contributor', 'Second Author', 'Unlinked Author'])
+        self.assertEqual(contributors(commits), ['@contributor', 'Unlinked Author', 'Zoë Contributor'])
 
     def test_downloads_and_comparison_are_bound_to_the_release(self):
         note = render('0.1.0-beta.7', 'Preserves drafts.', '## Fixes\n- A real PR by @contributor in #7', ['@contributor'], 'v0.1.0-beta.6')

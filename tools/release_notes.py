@@ -16,7 +16,7 @@ def api(path, body=None, paginate=False):
     if paginate:
         args += ['--paginate', '--slurp']
     result = subprocess.run(args, input=json.dumps(body) if body is not None else None,
-                            text=True, capture_output=True, check=True)
+                            text=True, encoding="utf-8", capture_output=True, check=True)
     return json.loads(result.stdout)
 
 
@@ -100,7 +100,7 @@ Thanks to {credits} for contributions included in this release.
 def generate(version, commit):
     validate(version)
     # Resolve references before using them in GitHub paths or comparisons.
-    commit = subprocess.check_output(['git', 'rev-parse', '--verify', commit + '^{commit}'], cwd=ROOT, text=True).strip()
+    commit = subprocess.check_output(['git', 'rev-parse', '--verify', commit + '^{commit}'], cwd=ROOT, text=True, encoding="utf-8").strip()
     pages = api(f'repos/{REPO}/releases?per_page=100', paginate=True)
     def ancestor(tag, head):
         return subprocess.run(['git', 'merge-base', '--is-ancestor', tag, head], cwd=ROOT, capture_output=True).returncode == 0
@@ -117,7 +117,7 @@ def generate(version, commit):
     else:
         pages = api(f'repos/{REPO}/commits?sha={commit}&per_page=100', paginate=True)
         commits = [c for page in pages for c in page]
-    highlights = (ROOT / 'docs/release-notes' / f'{version}.md').read_text()
+    highlights = (ROOT / 'docs/release-notes' / f'{version}.md').read_text(encoding='utf-8')
     # GitHub already returns a comparison link. Render one explicit link below.
     generated = re.sub(r'^\*\*Full Changelog\*\*:.*$', '', generated, flags=re.M).strip()
     return render(version, highlights, generated, contributors(commits), previous)
@@ -130,5 +130,5 @@ if __name__ == '__main__':
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    args.output.write_text(generate(args.version, args.commit))
+    args.output.write_text(generate(args.version, args.commit), encoding="utf-8")
     print(f'Release-note preview written to {args.output}. No release was changed.')

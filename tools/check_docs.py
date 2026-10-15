@@ -7,14 +7,14 @@ import subprocess
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
-names = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT, text=True).split('\0')
+names = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT, text=True, encoding="utf-8").split('\0')
 failures = []
 checked = 0
 for name in names:
     file = ROOT / name
     if file.suffix != '.md' or not file.is_file():
         continue
-    text = re.sub(r'```.*?```', '', file.read_text(), flags=re.S)
+    text = re.sub(r'```.*?```', '', file.read_text(encoding="utf-8"), flags=re.S)
     links = re.findall(r'\[[^\]]*\]\(([^\s)]+)\)', text)
     links += re.findall(r'(?:src|srcset|href)="([^"]+)"', text)
     for link in links:
