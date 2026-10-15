@@ -508,6 +508,13 @@ img {
 .reading-section p {
   margin: 20px 0;
 }
+.beta-migration code {
+  overflow-wrap: anywhere;
+  font-size: 0.9em;
+}
+.beta-migration li {
+  margin-block: 12px;
+}
 .guide-layout,
 .release-layout {
   display: grid;
