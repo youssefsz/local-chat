@@ -44,7 +44,7 @@ Version tags are separate Git references, not commits pushed “into” main. Do
 The current signing identity is `Developer ID Application: Youssef Dhibi (5S4ZT4SRV9)`. A certificate on a developer's Mac is not automatically available to GitHub's temporary runners.
 
 1. Open Keychain Access → My Certificates. Select this **Developer ID Application** identity, including its private key, and export only that identity as a password-protected `.p12` file outside the repository. Do not export every identity in the keychain.
-2. At [account.apple.com](https://account.apple.com/), sign in and generate an app-specific password for Local Chat notarization. This is different from your normal Apple account password. Apple ID notarization uses the existing Developer Program team; it does not create an App Store listing.
+2. At [account.apple.com](https://account.apple.com/), sign in with your Apple Developer account. Open **Sign-In and Security → App-Specific Passwords → Generate an app-specific password**, and name it Local Chat notarization. Use the password Apple generates in the terminal prompt. Your Mac login password, normal Apple account password, and certificate export password do not work for notarization. Apple ID notarization uses the existing Developer Program team; it does not create an App Store listing.
 3. From your local terminal, run:
 
    ```sh

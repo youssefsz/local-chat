@@ -1,24 +1,24 @@
 {
   "conclusion": "success",
-  "headSha": "a2f69664cbd4efccb0cbad32d870be58ebf0dee4",
+  "headSha": "e0d2414f8beefece8adfc2937b3355102bb7dbd7",
   "jobs": [
     {
       "name": "installers / macOS ARM64",
       "conclusion": "success",
-      "url": "https://github.com/youssefsz/local-chat/actions/runs/38704749927/job/116321764744"
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709022396/job/116335497472"
     },
     {
       "name": "installers / Linux x64",
       "conclusion": "success",
-      "url": "https://github.com/youssefsz/local-chat/actions/runs/38704749927/job/116321765002"
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709022396/job/116335497670"
     },
     {
       "name": "installers / Windows x64 unsigned",
       "conclusion": "success",
-      "url": "https://github.com/youssefsz/local-chat/actions/runs/38704749927/job/116321765024"
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709022396/job/116335497693"
     }
   ],
-  "url": "https://github.com/youssefsz/local-chat/actions/runs/38704749927",
+  "url": "https://github.com/youssefsz/local-chat/actions/runs/38709022396",
   "windows_signing": "Intentionally unsigned",
   "macos_ci_signing": "Ad-hoc CI test build; notarization is required only in the release workflow",
   "development": "npm run dev:app launched with isolated app.localchat.desktop.dev/test-profile data; frontend ready and native show timing recorded separately from production",
