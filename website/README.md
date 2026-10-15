@@ -1,5 +1,7 @@
 # Local Chat website
 
+Production: [local-chat.youssef.tn](https://local-chat.youssef.tn).
+
 Plain HTML, CSS, and browser JavaScript, with a small Cloudflare Worker for release downloads. The website lives independently of the desktop app's npm package.
 
 ```sh
