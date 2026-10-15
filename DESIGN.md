@@ -235,6 +235,10 @@ Room management appears only for the creator installation in the current network
 
 People and connection labels come from backend state. The sidebar shows connected peers; the panel includes the local profile and discovered peer statuses. Empty states explain discovery or unavailable networking. Never seed production with sample people or conversations. Rust owns durable history and drafts in SQLite; the frontend presents state and issues commands. A display name does not verify a person's identity.
 
+### Connection recovery
+
+The sidebar connection status opens the People nearby connection panel. A full-width secondary Reconnect button below the sidebar status keeps recovery always visible. Also place a secondary Reconnect button below the panel connection details, with a visible label and the standard Lucide refresh-cw vector in the existing icon style. During a manual attempt, disable the button, label it Reconnecting, and show Checking this network beneath it. Connected, looking, reconnecting, and unavailable states remain distinct; color accompanies text. A failure appears inline near the control. The current conversation, draft, and reading position stay visible while discovery and connections restart. There is no window reload, modal, artificial delay, or reconnect animation. Use the same layout in both appearances and at the 800px minimum width.
+
 ### Messages and code
 
 Messages align by avatar and author baseline and receive a subtle row fill on hover. Plain-message copy buttons remain visible at all supported desktop widths. Code has its own persistent "Copy code" action in a dark inset panel with a slim header. Preserve exact content, line breaks, whitespace, and clipboard output. Code uses wrapping for long strings without editing stored text.

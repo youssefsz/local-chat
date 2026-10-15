@@ -31,6 +31,15 @@
   let code = $state(false);
   let error = $state('');
   let sending = $state(false);
+  let reconnectState = $state<
+    | { status: 'idle' }
+    | { status: 'pending' }
+    | { status: 'failed'; message: string }
+  >({ status: 'idle' });
+  let reconnecting = $derived(reconnectState.status === 'pending');
+  let reconnectError = $derived(
+    reconnectState.status === 'failed' ? reconnectState.message : '',
+  );
   let people = $state(false);
   let menu = $state(false);
   let archived = $state(false);
@@ -67,7 +76,8 @@
   let copyTimer: ReturnType<typeof setTimeout>;
   let toastTimer: ReturnType<typeof setTimeout>;
   let refreshMessages = false;
-  let hiddenPending = false;
+  let pendingRefresh: 'none' | 'state' | 'messages' = 'none';
+  let refreshWork: Promise<void> | undefined;
   let refreshTimer: ReturnType<typeof setTimeout>;
   let viewTimer: ReturnType<typeof setTimeout>;
   let draftQueue: Promise<void> = Promise.resolve();
@@ -76,6 +86,24 @@
   let room = $derived(roomList.find((r) => r.id === active));
   let connected = $derived(
     appState?.peers.filter((p) => p.status === 'connected') ?? [],
+  );
+  let networkTitle = $derived(
+    reconnecting || appState?.network_status === 'reconnecting'
+      ? 'Reconnecting…'
+      : appState?.network_status === 'connected'
+        ? 'Local network'
+        : appState?.network_status === 'unavailable'
+          ? 'Unavailable'
+          : 'Looking nearby',
+  );
+  let networkCaption = $derived(
+    reconnecting
+      ? 'Checking this network…'
+      : appState?.network_status === 'unavailable'
+        ? 'Check network access.'
+        : connected.length
+          ? `${connected.length} ${connected.length === 1 ? 'computer' : 'computers'} connected`
+          : 'Messages stay saved here.',
   );
   let owner = $derived(
     room?.owner === appState?.identity && active !== 'general' && current,
@@ -204,7 +232,24 @@
       );
     }
   }
-  async function refresh(readMessages = true) {
+  function refresh(readMessages = true): Promise<void> {
+    if (readMessages) pendingRefresh = 'messages';
+    else if (pendingRefresh === 'none') pendingRefresh = 'state';
+    refreshWork ??= drainRefresh();
+    return refreshWork;
+  }
+  async function drainRefresh() {
+    try {
+      while (pendingRefresh !== 'none') {
+        const readMessages = pendingRefresh === 'messages';
+        pendingRefresh = 'none';
+        await readState(readMessages);
+      }
+    } finally {
+      refreshWork = undefined;
+    }
+  }
+  async function readState(readMessages: boolean) {
     try {
       const snapshot = await api.snapshot();
       const moved = appState && snapshot.context !== appState.context;
@@ -249,6 +294,18 @@
       }
     } catch (e) {
       fail(e);
+    }
+  }
+  async function reconnect() {
+    if (reconnecting) return;
+    reconnectState = { status: 'pending' };
+    try {
+      await api.reconnect();
+      // Refresh saved state in place; do not reselect the room or reload the window.
+      await refresh();
+      reconnectState = { status: 'idle' };
+    } catch (e) {
+      reconnectState = { status: 'failed', message: String(e) };
     }
   }
   async function older() {
@@ -576,7 +633,6 @@
         (event) => {
           refreshMessages ||= event.payload.kind === 'messages';
           if (document.hidden) {
-            hiddenPending = true;
             return;
           }
           clearTimeout(refreshTimer);
@@ -638,11 +694,9 @@
     };
     media.addEventListener('change', changeTheme);
     const visibilityChanged = () => {
-      if (boot === 'ready' && !document.hidden && hiddenPending) {
-        hiddenPending = false;
-        const readMessages = refreshMessages;
+      if (boot === 'ready' && !document.hidden) {
         refreshMessages = false;
-        void refresh(readMessages);
+        void refresh();
       }
     };
     document.addEventListener('visibilitychange', visibilityChanged);
@@ -684,7 +738,13 @@
   });
 </script>
 
-<svelte:window onkeydown={keys} onclick={dismissMenu} />
+<svelte:window
+  onkeydown={keys}
+  onclick={dismissMenu}
+  onfocus={() => {
+    if (boot === 'ready') void refresh();
+  }}
+/>
 <Symbols />
 <div class="app">
   {#if error && boot === 'ready'}<div class="error-banner" role="alert">
@@ -796,27 +856,40 @@
               >{/each}{#if !connected.length}<p class="status-line">
                 {appState.network_status === 'unavailable'
                   ? 'Local network unavailable.'
-                  : 'Looking for nearby computers…'}<br />Open Local Chat on
+                  : appState.network_status === 'reconnecting' || reconnecting
+                    ? 'Reconnecting to nearby computers…'
+                    : 'Looking for nearby computers…'}<br />Open Local Chat on
                 another computer on this network.
               </p>{/if}
           </section>
         </div>
         <div class="sidebar-footer">
-          <button class="network-card" onclick={() => (people = true)}
-            ><Icon name="wifi" /><span
-              ><span class="network-title"
-                >{appState.network_status === 'connected'
-                  ? 'Local network'
-                  : appState.network_status === 'unavailable'
-                    ? 'Connection unavailable'
-                    : 'Discovering nearby'}</span
-              ><span class="network-caption" style="display:block"
-                >{connected.length
-                  ? 'A shared space, right here.'
-                  : 'Messages stay saved here.'}</span
-              ></span
-            ><Icon name="chevron" /></button
+          <button
+            class="network-card"
+            class:network-connected={connected.length > 0 && !reconnecting}
+            onclick={() => (people = true)}
+            aria-label={'Connection details: ' + networkTitle}
+            title={appState.network_detail}
           >
+            <Icon name="wifi" /><span>
+              <span class="network-title">{networkTitle}</span>
+              <span class="network-caption">{networkCaption}</span>
+            </span><Icon name="chevron" />
+          </button>
+          <button
+            class="button reconnect-button sidebar-reconnect"
+            onclick={reconnect}
+            disabled={reconnecting}
+            ><Icon name="refresh" />{reconnecting
+              ? 'Reconnecting…'
+              : 'Reconnect'}</button
+          >
+          {#if reconnectError && !people}<p
+              class="reconnect-error"
+              role="alert"
+            >
+              Couldn’t reconnect. {reconnectError}
+            </p>{/if}
           <div class="profile-row">
             <span class="avatar you">{initials(appState.profile)}</span><span
               class="profile-text"
@@ -1040,6 +1113,24 @@
             {appState.network_detail}<br />Every room is open to everyone on
             this network.
           </p>
+          <div class="connection-actions">
+            <button
+              class="button reconnect-button"
+              onclick={reconnect}
+              disabled={reconnecting}
+              ><Icon name="refresh" />{reconnecting
+                ? 'Reconnecting…'
+                : 'Reconnect'}</button
+            >
+            <p class="connection-feedback" role="status">
+              {reconnecting
+                ? 'Checking this network…'
+                : 'Missing a computer or messages? Try reconnecting.'}
+            </p>
+            {#if reconnectError}<p class="reconnect-error" role="alert">
+                Couldn’t reconnect. {reconnectError}
+              </p>{/if}
+          </div>
           <div class="detail-person">
             <span class="avatar you">{initials(appState.profile)}</span><span
               class="person-info"

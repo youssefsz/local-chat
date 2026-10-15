@@ -442,20 +442,25 @@ textarea {
   background: var(--hover);
 }
 .network-card > .icon {
-  color: var(--green);
+  color: var(--secondary);
   width: 19px;
   height: 19px;
+  flex-shrink: 0;
+}
+.network-connected > .icon:first-child {
+  color: var(--green);
 }
 .network-title {
   font-size: 12px;
   font-weight: 550;
 }
 .network-caption {
+  display: block;
   font-size: 11px;
   color: var(--secondary);
   margin-top: 4px;
 }
-.network-card .chevron {
+.network-card > .icon:last-child {
   margin-left: auto;
   width: 13px;
   color: var(--muted);
@@ -970,8 +975,35 @@ textarea {
   color: var(--secondary);
   margin-bottom: 23px;
 }
-.detail-note .status-dot {
-  margin-right: 5px;
+.connection-actions {
+  margin: -8px 0 12px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.reconnect-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+}
+.reconnect-button .icon {
+  width: 15px;
+  height: 15px;
+}
+.sidebar-reconnect {
+  width: 100%;
+  justify-content: center;
+  margin-top: 8px;
+}
+.connection-feedback,
+.reconnect-error {
+  font-size: 11px;
+  line-height: 1.6;
+  margin: 9px 0 0;
+  color: var(--secondary);
+}
+.reconnect-error {
+  color: var(--accent);
 }
 .detail-person {
   display: flex;

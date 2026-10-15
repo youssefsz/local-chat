@@ -22,6 +22,25 @@
     >
     <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7" /></symbol
     >
+    <symbol id="i-refresh" viewBox="0 0 24 24"
+      ><desc
+        >Lucide refresh-cw. ISC License. Copyright (c) 2026 Lucide Icons and
+        Contributors. Permission to use, copy, modify, and/or distribute this
+        software for any purpose with or without fee is hereby granted, provided
+        that the above copyright notice and this permission notice appear in all
+        copies. THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL
+        WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES
+        OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE
+        FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY
+        DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER
+        IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
+        OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.</desc
+      >
+      <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+      <path d="M21 3v5h-5" />
+      <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+      <path d="M8 16H3v5" /></symbol
+    >
     <symbol id="i-settings" viewBox="0 0 24 24"
       ><path
         d="m9 3-.8 2.5-2.4 1L3.5 6l-2 3.5 1.9 1.7v2.6L1.5 15l2 3.5 2.4-.5 2.3 1L9 21h4l.8-2 2.4-1 2.3.5 2-3.5-1.9-1.2v-2.6l1.9-1.7-2-3.5-2.3.5-2.4-1L13 3Z"

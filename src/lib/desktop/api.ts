@@ -46,7 +46,7 @@ export interface Snapshot {
   contexts: NetworkContext[];
   rooms: Room[];
   peers: Peer[];
-  network_status: string;
+  network_status: 'discovering' | 'connected' | 'reconnecting' | 'unavailable';
   network_detail: string;
 }
 export interface Draft {
@@ -66,6 +66,7 @@ export const api = {
   retryStartup: () => invoke<void>('retry_startup'),
   showWindow: () => invoke<void>('show_window'),
   snapshot: () => invoke<Snapshot>('snapshot'),
+  reconnect: () => invoke<void>('reconnect'),
   rooms: (context: string) => invoke<Room[]>('rooms', { context }),
   messages: (
     context: string,

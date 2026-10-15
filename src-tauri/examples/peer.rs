@@ -1,6 +1,6 @@
 //! Test-only isolated peer process. This binary is never bundled in the desktop app.
 use local_chat::{
-    domain::{MessageMode, Payload},
+    domain::{Draft, MessageMode, Payload},
     network::Engine,
     platform::Identity,
     storage::Store,
@@ -26,6 +26,25 @@ async fn main() -> anyhow::Result<()> {
             let operation = value["op"].as_str().unwrap_or("");
             match operation {
                 "status" => Ok(serde_json::to_value(engine.snapshot().await?)?),
+                "reconnect" => {
+                    engine.reconnect().await?;
+                    Ok(serde_json::json!({"restarted":true}))
+                }
+                "draft" => {
+                    let db = engine.store.lock().await;
+                    let room = value["room"].as_str().unwrap_or("general");
+                    if let Some(content) = value["content"].as_str() {
+                        db.save_draft(
+                            &db.active,
+                            room,
+                            &Draft {
+                                content: content.into(),
+                                code: true,
+                            },
+                        )?;
+                    }
+                    Ok(serde_json::to_value(db.draft(&db.active, room)?)?)
+                }
                 "send" => {
                     let event = engine
                         .publish(Payload::Message {

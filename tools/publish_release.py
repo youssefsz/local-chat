@@ -36,10 +36,12 @@ if existing.returncode == 0:
         raise SystemExit('The draft contains unexpected assets. Inspect it before retrying.')
     resume = True
 notes=assets/'release-notes.md'
+changes = Path('docs/release-notes') / f'{version}.md'
+description = changes.read_text().strip() + '\n\n' if changes.exists() else ''
 notes.write_text(f'''{marker}
 Local Chat {version}
 
-Downloads: Apple Silicon macOS, Windows x64, Linux x64. Windows is unsigned and may display SmartScreen warnings. The macOS app is Developer ID signed and notarized.
+{description}Downloads: Apple Silicon macOS, Windows x64, Linux x64. Windows is unsigned and may display SmartScreen warnings. The macOS app is Developer ID signed and notarized.
 
 Windows/Linux networking adapters are implemented and build-tested. Physical cross-device discovery, firewall behavior, and desktop integration still need validation on those operating systems. See docs/platform-status.md.
 

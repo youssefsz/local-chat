@@ -25,7 +25,7 @@ use std::{
 };
 use tokio::{
     net::TcpSocket,
-    sync::{Mutex, broadcast},
+    sync::{Mutex, Semaphore, broadcast, mpsc, oneshot},
     time::{interval, timeout},
 };
 use tokio_util::{
@@ -47,18 +47,45 @@ pub enum Change {
     Event(Event),
     Received(Event, bool),
 }
+/// The view reloads durable state after a burst; missing a notification is not an exit.
+pub async fn next_view_change(changes: &mut broadcast::Receiver<Change>) -> Option<Change> {
+    match changes.recv().await {
+        Ok(change) => Some(change),
+        Err(broadcast::error::RecvError::Lagged(_)) => Some(Change::History),
+        Err(broadcast::error::RecvError::Closed) => None,
+    }
+}
+type ReconnectReply = oneshot::Sender<std::result::Result<(), String>>;
+struct Presence {
+    peer: Peer,
+    session_id: uuid::Uuid,
+}
+struct RunningNetwork {
+    cancel: CancellationToken,
+    task: tokio::task::JoinHandle<()>,
+}
+impl RunningNetwork {
+    async fn shutdown(self) {
+        self.cancel.cancel();
+        let _ = self.task.await;
+    }
+}
 pub struct Engine {
     pub store: Mutex<Store>,
     pub identity: Identity,
-    pub peers: Mutex<HashMap<String, Peer>>,
+    peers: Mutex<HashMap<String, Presence>>,
     pub status: Mutex<(String, String)>,
     pub changes: broadcast::Sender<Change>,
     pub stop: CancellationToken,
     context_generation: AtomicU64,
+    reconnect_tx: mpsc::Sender<ReconnectReply>,
+    reconnect_rx: Mutex<mpsc::Receiver<ReconnectReply>>,
+    reconnect_gate: Semaphore,
 }
 impl Engine {
     pub fn new(store: Store, identity: Identity) -> Arc<Self> {
         let (changes, _) = broadcast::channel(256);
+        let (reconnect_tx, reconnect_rx) = mpsc::channel(1);
         Arc::new(Self {
             store: Mutex::new(store),
             identity,
@@ -67,6 +94,9 @@ impl Engine {
             changes,
             stop: CancellationToken::new(),
             context_generation: AtomicU64::new(crate::platform::network_generation()),
+            reconnect_tx,
+            reconnect_rx: Mutex::new(reconnect_rx),
+            reconnect_gate: Semaphore::new(1),
         })
     }
     pub fn changed(&self) {
@@ -75,19 +105,25 @@ impl Engine {
     pub async fn snapshot(&self) -> Result<Snapshot> {
         let db = self.store.lock().await;
         let mut status = self.status.lock().await.clone();
-        let peers: Vec<Peer> = self.peers.lock().await.values().cloned().collect();
-        if status.0 == "connected" && !peers.iter().any(|p| p.status == "connected") {
-            status = if peers.iter().any(|p| p.status == "reconnecting") {
-                (
+        let peers: Vec<Peer> = self
+            .peers
+            .lock()
+            .await
+            .values()
+            .map(|presence| presence.peer.clone())
+            .collect();
+        if status.0 != "unavailable" && !peers.iter().any(|p| p.status == "connected") {
+            if peers.iter().any(|p| p.status == "reconnecting") {
+                status = (
                     "reconnecting".into(),
                     "Reconnecting to nearby computers".into(),
-                )
-            } else {
-                (
+                );
+            } else if status.0 == "connected" {
+                status = (
                     "discovering".into(),
                     "Looking for nearby computers. Your messages remain saved here.".into(),
-                )
-            };
+                );
+            }
         }
         Ok(Snapshot {
             identity: self.identity.id(),
@@ -111,39 +147,149 @@ impl Engine {
         let _ = self.changes.send(Change::Event(event.clone()));
         Ok(event)
     }
+    /// Restart network discovery and sessions, without replacing identity or local history.
+    pub async fn reconnect(&self) -> Result<()> {
+        ensure!(!self.stop.is_cancelled(), "Local Chat is shutting down");
+        let _permit = self
+            .reconnect_gate
+            .try_acquire()
+            .context("Already reconnecting to nearby computers")?;
+        let (reply, response) = oneshot::channel();
+        self.reconnect_tx
+            .try_send(reply)
+            .context("A reconnect is already queued")?;
+        timeout(Duration::from_secs(15), response)
+            .await
+            .context("Reconnecting took too long. Try again.")?
+            .context("The network service stopped while reconnecting")?
+            .map_err(anyhow::Error::msg)
+    }
     pub async fn run(self: Arc<Self>) {
         let mut last: Option<NetworkEvidence> = None;
-        let mut current: Option<CancellationToken> = None;
+        let mut current: Option<RunningNetwork> = None;
+        let mut requests = self.reconnect_rx.lock().await;
         let mut ticker = interval(Duration::from_millis(250));
         let mut last_generation = 0;
         let mut last_probe = std::time::Instant::now() - Duration::from_secs(30);
-        let mut previous_tick = std::time::Instant::now();
+        // Instant may exclude macOS sleep. Wall time also catches suspension/wake.
+        let mut previous_tick = std::time::SystemTime::now();
         loop {
-            tokio::select! {_=self.stop.cancelled()=>break,_=ticker.tick()=>{
-                let resumed=previous_tick.elapsed()>Duration::from_secs(8);previous_tick=std::time::Instant::now();
-                let generation=crate::platform::network_generation();
-                if !resumed && generation==last_generation && last_probe.elapsed()<Duration::from_secs(10) && current.as_ref().is_some_and(CancellationToken::is_cancelled){continue}
-                if !resumed && generation==last_generation && last_probe.elapsed()<Duration::from_secs(10) && current.as_ref().is_some_and(|c|!c.is_cancelled()){continue}
-                let signal_changed=last_generation!=generation;
-                last_generation=generation;last_probe=std::time::Instant::now();
-                if signal_changed || resumed { if let Some(cancel)=current.take(){cancel.cancel();} self.peers.lock().await.clear(); self.changed(); }
-                let evidence=tokio::task::spawn_blocking(crate::platform::network_evidence).await.ok().and_then(Result::ok);
-                if evidence!=last || resumed || signal_changed || current.as_ref().is_none_or(CancellationToken::is_cancelled){
-                    if let Some(cancel)=current.take(){cancel.cancel();}
-                    self.peers.lock().await.clear();
-                    *self.status.lock().await=("discovering".into(),"Checking the current network before sharing".into());self.changed();
-                    // Cancellation closes sockets before changing the active export context.
-                    if let Some(e)=evidence.clone(){
-                        let fingerprint=e.fingerprint();
-                        let activated=self.store.lock().await.activate(fingerprint.as_deref(),if fingerprint.is_some(){"Local network"}else{"Unrecognized network"});
-                        if activated.is_ok() && crate::platform::network_generation()==generation{self.context_generation.store(generation,Ordering::Release);let cancel=self.stop.child_token();current=Some(cancel.clone());let engine=self.clone();tokio::spawn(async move{if let Err(_err)=engine.clone().serve(e,cancel.clone()).await&& !cancel.is_cancelled(){*engine.status.lock().await=("unavailable".into(),"Local discovery is unavailable. Check local-network permissions and your firewall. Retrying automatically.".into());engine.changed();cancel.cancel();}});}
-                    }else{*self.status.lock().await=("unavailable".into(),"Connect to Wi-Fi or Ethernet. VPN interfaces are not shared.".into());}
-                    last=evidence;self.changed();
+            let request = tokio::select! {
+                _ = self.stop.cancelled() => break,
+                request = requests.recv() => request,
+                _ = ticker.tick() => None,
+            };
+            if request.as_ref().is_some_and(oneshot::Sender::is_closed) {
+                continue;
+            }
+            let manual = request.is_some();
+            let resumed = previous_tick
+                .elapsed()
+                .map_or(true, |gap| gap > Duration::from_secs(8));
+            previous_tick = std::time::SystemTime::now();
+            let generation = crate::platform::network_generation();
+            let signal_changed = last_generation != generation;
+            if !manual
+                && !resumed
+                && !signal_changed
+                && last_probe.elapsed() < Duration::from_secs(10)
+            {
+                continue;
+            }
+            last_generation = generation;
+            last_probe = std::time::Instant::now();
+            if manual || signal_changed || resumed {
+                if let Some(network) = current.take() {
+                    network.shutdown().await;
                 }
-            }}
+                self.peers.lock().await.clear();
+                *self.status.lock().await = (
+                    "reconnecting".into(),
+                    "Checking the current network before reconnecting".into(),
+                );
+                self.changed();
+            }
+            let evidence = tokio::task::spawn_blocking(crate::platform::network_evidence)
+                .await
+                .ok()
+                .and_then(Result::ok);
+            let restart = manual
+                || resumed
+                || signal_changed
+                || evidence != last
+                || current.as_ref().is_none_or(|network| {
+                    network.cancel.is_cancelled() || network.task.is_finished()
+                });
+            let mut outcome = Ok(());
+            if restart {
+                // Await old sessions before starting new ones: their cleanup owns peer state.
+                if let Some(network) = current.take() {
+                    network.shutdown().await;
+                }
+                self.peers.lock().await.clear();
+                if let Some(e) = evidence.clone() {
+                    let fingerprint = e.fingerprint();
+                    let mut db = self.store.lock().await;
+                    // A transport retry on an unchanged, continuously observed route is
+                    // not a new network, even when its gateway has no hardware address.
+                    let continuous = !resumed
+                        && !signal_changed
+                        && last.as_ref() == Some(&e)
+                        && !db.active.is_empty();
+                    let activated = if continuous {
+                        Ok(db.active.clone())
+                    } else {
+                        db.activate(
+                            fingerprint.as_deref(),
+                            if fingerprint.is_some() {
+                                "Local network"
+                            } else {
+                                "Unrecognized network"
+                            },
+                        )
+                    };
+                    drop(db);
+                    outcome = activated.map(|_| ()).map_err(|e| e.to_string());
+                    if outcome.is_ok()
+                        && !self.stop.is_cancelled()
+                        && crate::platform::network_generation() == generation
+                    {
+                        self.context_generation.store(generation, Ordering::Release);
+                        let cancel = self.stop.child_token();
+                        let service_cancel = cancel.clone();
+                        let engine = self.clone();
+                        let task = tokio::spawn(async move {
+                            let _result = engine.clone().serve(e, service_cancel.clone()).await;
+                            if !service_cancel.is_cancelled() {
+                                engine.peers.lock().await.clear();
+                                *engine.status.lock().await = ("unavailable".into(), "Local discovery is unavailable. Check local-network permissions and your firewall. Retrying automatically.".into());
+                                service_cancel.cancel();
+                                engine.changed();
+                            }
+                        });
+                        current = Some(RunningNetwork { cancel, task });
+                    } else if outcome.is_ok() {
+                        outcome = Err(
+                            "The network changed while reconnecting. Retrying automatically."
+                                .into(),
+                        );
+                    }
+                } else {
+                    outcome =
+                        Err("Connect to Wi-Fi or Ethernet. VPN interfaces are not shared.".into());
+                }
+                if let Err(message) = &outcome {
+                    *self.status.lock().await = ("unavailable".into(), message.clone());
+                }
+                last = evidence;
+                self.changed();
+            }
+            if let Some(reply) = request {
+                let _ = reply.send(outcome);
+            }
         }
-        if let Some(cancel) = current {
-            cancel.cancel();
+        if let Some(network) = current {
+            network.shutdown().await;
         }
         self.peers.lock().await.clear();
     }
@@ -185,7 +331,7 @@ impl Engine {
                     discovery::DiscoveryEvent::Resolved{peer,certificate:cert,address:ip,port}=>{
                         if peer<=id||!valid_hex_key(&peer)||!valid_hex_key(&cert)||!evidence.permits(ip)||dials.len()>=19 && !dials.contains_key(&peer){continue}
                         let endpoint=SocketAddr::new(IpAddr::V4(ip),port);
-                        if let Some((old_endpoint,old_cert,old_cancel))=dials.get(&peer){if *old_endpoint==endpoint && *old_cert==cert {continue}old_cancel.cancel();}
+                        if let Some((old_endpoint,old_cert,old_cancel))=dials.get(&peer){if *old_endpoint==endpoint && *old_cert==cert {continue}old_cancel.cancel();self.peers.lock().await.remove(&peer);self.changed();}
                         let child=cancel.child_token();dials.insert(peer.clone(),(endpoint,cert.clone(),child.clone()));
                         let engine=self.clone();let context=context.clone();let local=evidence.address;let scope=evidence.clone();
                         sessions.spawn(async move{let mut attempt=0u32;loop{if child.is_cancelled(){break}
@@ -197,7 +343,13 @@ impl Engine {
                                 engine.clone().session(stream,binding,Some(peer.clone()),context.clone(),child.clone()).await
                             }=>result};
                             #[cfg(feature="test-profile")] if let Err(err)=&result { eprintln!("Test dial ended: {err}"); }
-                            if result.is_err(){engine.peers.lock().await.insert(peer.clone(),Peer{id:peer.clone(),name:"Nearby computer".into(),platform:String::new(),status:"reconnecting".into()});engine.changed();}
+                            if result.is_err() && !child.is_cancelled(){
+                                let mut peers=engine.peers.lock().await;
+                                if peers.get(&peer).is_none_or(|presence|presence.peer.status!="connected") {
+                                    peers.insert(peer.clone(),Presence{peer:Peer{id:peer.clone(),name:"Nearby computer".into(),platform:String::new(),status:"reconnecting".into()},session_id:uuid::Uuid::new_v4()});
+                                    drop(peers);engine.changed();
+                                }
+                            }
                             attempt=attempt.saturating_add(1);let jitter=rand::random::<u64>()%500;
                             tokio::select!{_=child.cancelled()=>break,_=tokio::time::sleep(Duration::from_millis((1u64<<attempt.min(5))*1000+jitter))=>{}}
                         }});
@@ -307,19 +459,25 @@ impl Engine {
             &serde_json::to_vec(&(version, &peer, &profile, &platform, binding))?,
             &signature,
         )?;
+        let session_id = uuid::Uuid::new_v4();
         {
             let mut peers = self.peers.lock().await;
             ensure!(
-                peers.get(&peer).is_none_or(|p| p.status != "connected"),
+                peers
+                    .get(&peer)
+                    .is_none_or(|p| p.peer.status != "connected"),
                 "Duplicate peer session"
             );
             peers.insert(
                 peer.clone(),
-                Peer {
-                    id: peer.clone(),
-                    name: profile,
-                    platform,
-                    status: "connected".into(),
+                Presence {
+                    session_id,
+                    peer: Peer {
+                        id: peer.clone(),
+                        name: profile,
+                        platform,
+                        status: "connected".into(),
+                    },
                 },
             );
         }
@@ -350,8 +508,15 @@ impl Engine {
                 }
             }Ok(())
         }.await;
-        self.peers.lock().await.remove(&peer);
-        self.changed();
+        let mut peers = self.peers.lock().await;
+        if peers
+            .get(&peer)
+            .is_some_and(|presence| presence.session_id == session_id)
+        {
+            peers.remove(&peer);
+            drop(peers);
+            self.changed();
+        }
         result
     }
 }
@@ -438,6 +603,56 @@ mod tests {
     use super::*;
     use std::net::Ipv4Addr;
     use tokio::net::{TcpListener, TcpStream};
+    #[tokio::test]
+    async fn view_subscription_survives_a_burst() {
+        let (sender, mut receiver) = broadcast::channel(2);
+        for _ in 0..8 {
+            sender.send(Change::State).unwrap();
+        }
+        assert!(matches!(
+            next_view_change(&mut receiver).await,
+            Some(Change::History)
+        ));
+        assert!(matches!(
+            next_view_change(&mut receiver).await,
+            Some(Change::State)
+        ));
+        drop(sender);
+        assert!(matches!(
+            next_view_change(&mut receiver).await,
+            Some(Change::State)
+        ));
+        assert!(next_view_change(&mut receiver).await.is_none());
+    }
+
+    #[tokio::test]
+    async fn reconnect_requests_are_bounded_and_stop_with_the_app() {
+        let (_directory, engine) = peer();
+        let first = tokio::spawn({
+            let engine = engine.clone();
+            async move { engine.reconnect().await }
+        });
+        let reply = engine.reconnect_rx.lock().await.recv().await.unwrap();
+        assert!(
+            engine
+                .reconnect()
+                .await
+                .unwrap_err()
+                .to_string()
+                .contains("Already reconnecting")
+        );
+        reply.send(Ok(())).unwrap();
+        first.await.unwrap().unwrap();
+        engine.stop.cancel();
+        assert!(
+            engine
+                .reconnect()
+                .await
+                .unwrap_err()
+                .to_string()
+                .contains("shutting down")
+        );
+    }
     fn peer() -> (tempfile::TempDir, Arc<Engine>) {
         let dir = tempfile::tempdir().unwrap();
         let identity = Identity::load(dir.path(), true).unwrap();
@@ -486,6 +701,39 @@ mod tests {
         })
         .await
         .expect("Peers failed to converge");
+    }
+    #[tokio::test]
+    async fn old_session_cleanup_cannot_remove_a_reconnected_peer() {
+        let (_a_dir, a) = peer();
+        let (_b_dir, b) = peer();
+        let old_cancel = CancellationToken::new();
+        let old = connect(a.clone(), b.clone(), old_cancel.clone()).await;
+        async fn established(a: &Engine, b: &Engine) {
+            timeout(Duration::from_secs(5), async {
+                while a.peers.lock().await.is_empty() || b.peers.lock().await.is_empty() {
+                    tokio::task::yield_now().await;
+                }
+            })
+            .await
+            .unwrap();
+        }
+        established(&a, &b).await;
+        // Discovery replaced an endpoint before the old connection finished cleanup.
+        a.peers.lock().await.clear();
+        b.peers.lock().await.clear();
+        let new_cancel = CancellationToken::new();
+        let new = connect(a.clone(), b.clone(), new_cancel.clone()).await;
+        established(&a, &b).await;
+        old_cancel.cancel();
+        for task in old {
+            let _ = task.await;
+        }
+        assert_eq!(a.snapshot().await.unwrap().peers.len(), 1);
+        assert_eq!(b.snapshot().await.unwrap().peers.len(), 1);
+        new_cancel.cancel();
+        for task in new {
+            let _ = task.await;
+        }
     }
     async fn mesh(count: usize) {
         let _ = rustls::crypto::ring::default_provider().install_default();

@@ -23,6 +23,10 @@ async fn snapshot(state: State<'_, DesktopState>) -> Reply<Snapshot> {
     state.snapshot().await.map_err(error)
 }
 #[tauri::command]
+async fn reconnect(state: State<'_, DesktopState>) -> Reply<()> {
+    state.reconnect().await.map_err(error)
+}
+#[tauri::command]
 async fn rooms(state: State<'_, DesktopState>, context: String) -> Reply<Vec<Room>> {
     state.store.lock().await.rooms(&context).map_err(error)
 }
@@ -309,6 +313,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             snapshot,
+            reconnect,
             rooms,
             messages,
             send_message,
@@ -415,7 +420,7 @@ fn watch_changes(handle: tauri::AppHandle, engine: DesktopState) {
     let events = engine;
     tauri::async_runtime::spawn(async move {
         let mut changes = events.changes.subscribe();
-        while let Ok(change) = changes.recv().await {
+        while let Some(change) = crate::network::next_view_change(&mut changes).await {
             if let Change::Received(event, true) = &change {
                 let background = handle.get_webview_window("main").is_none_or(|w| {
                     !w.is_visible().unwrap_or(false) || !w.is_focused().unwrap_or(false)

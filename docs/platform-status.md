@@ -11,7 +11,7 @@ Pending physical verification includes a second computer, multiple routers with 
 ## Windows x64: native CI and physical verification
 
 - [x] Implement platform adapters: IP Helper hardware checks and notifications, default-route/gateway evidence, scoped sockets, and IPv4 DNS-SD. OS observer and conservative-evidence tests run on Windows CI.
-- [x] Native Windows x64 CI passes formatting, Clippy, 14 backend/adapter tests, production compilation, NSIS packaging, architecture/test-control checks and unsigned Authenticode verification.
+- [x] Native Windows x64 CI passes formatting, Clippy, 17 backend/adapter tests, production compilation, NSIS packaging, architecture/test-control checks and unsigned Authenticode verification.
 - [ ] Install the Windows package and verify WebView2 on a clean desktop.
 - [ ] Verify incoming-connection firewall prompts and Bonjour/mDNS behavior.
 - [ ] Verify secure key storage and retained installation identity across upgrades.
@@ -24,7 +24,7 @@ Pending physical verification includes a second computer, multiple routers with 
 CI builds on Ubuntu 22.04 x64 to produce AppImage and Debian packages. Ubuntu 24.04 LTS is the first physical-desktop validation target; Fedora AppImage validation remains pending. ARM Linux is outside the supported build matrix.
 
 - [x] Implement platform adapters: sysfs physical-device validation, default-route/gateway evidence, RTNETLINK generation updates, scoped sockets, and IPv4 DNS-SD. Native CI exercises observer initialization, evidence rejection and unprivileged socket binding.
-- [x] Native Ubuntu x64 CI passes formatting, Clippy, 15 backend/adapter tests, production compilation, AppImage/Debian packaging and architecture/test-control checks.
+- [x] Native Ubuntu x64 CI passes formatting, Clippy, 18 backend/adapter tests, production compilation, AppImage/Debian packaging and architecture/test-control checks.
 - [ ] Test discovery and firewall behavior on both target distributions.
 - [ ] Verify Secret Service availability and fail safely when key storage is unavailable.
 - [ ] Verify notifications, clipboard and native menus under supported sessions.

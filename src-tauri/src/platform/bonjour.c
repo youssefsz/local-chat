@@ -7,6 +7,7 @@
 #include <poll.h>
 #include <net/if.h>
 #include <arpa/inet.h>
+#include <errno.h>
 
 typedef void (*event_callback)(void *,int,const char *,const char *,const char *,const char *,unsigned short);
 struct discovery;
@@ -61,8 +62,9 @@ static void *run(void *context){
     int descriptor=DNSServiceRefSockFD(d->connection);
     while(!atomic_load_explicit(&d->stop,memory_order_acquire)){
         struct pollfd item={.fd=descriptor,.events=POLLIN};int status=poll(&item,1,200);
+        if(status<0){if(errno==EINTR)continue;failure(d,kDNSServiceErr_ServiceNotRunning);break;}
+        if(status>0&&(item.revents&(POLLERR|POLLHUP|POLLNVAL))){failure(d,kDNSServiceErr_ServiceNotRunning);break;}
         if(status>0&&(item.revents&POLLIN)){error=DNSServiceProcessResult(d->connection);if(error){failure(d,error);break;}}
-        else if(status<0)break;
     }
 cleanup:
     for(size_t i=0;i<64;i++)if(d->records[i].used)clear_record(&d->records[i]);
