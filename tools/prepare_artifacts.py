@@ -30,10 +30,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('platform', choices=TARGETS)
     parser.add_argument('--signed-macos', action='store_true')
+    parser.add_argument('--clean', action='store_true', help='Remove only generated bundle output before rebuilding from a cache')
     args = parser.parse_args()
     version = check()
     target, executable, packages = TARGETS[args.platform]
     release = ROOT / 'src-tauri/target' / target / 'release'
+    if args.clean:
+        bundle = release / 'bundle'
+        if bundle.exists(): shutil.rmtree(bundle)
+        print('Removed generated bundle output for ' + args.platform)
+        return
     data = (release / executable).read_bytes()
     verify_architecture(data, args.platform)
     for marker in MARKERS:

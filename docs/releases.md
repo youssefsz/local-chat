@@ -35,7 +35,7 @@ git push origin v0.1.0-beta.2
 
 `Release` checks that the tag matches all manifests and points to a commit on main. It rebuilds and tests every target. The macOS release must be Developer ID signed and notarized; missing credentials fail the release rather than silently producing an ad-hoc package. A final job stages a draft release, uploads all four installers and SHA256SUMS, then publishes. A failed upload leaves a draft. Beta/RC tags are prereleases and do not replace the latest regular release. A regular tag publishes a regular release.
 
-Version tags are separate Git references, not commits pushed “into” main. Do not move or delete an already published tag to rerun it; fix the issue and use the next beta number. To retry an infrastructure failure before publication, rerun the failed workflow. If an interrupted publisher left a draft, inspect that draft before retrying; the publisher refuses to overwrite any existing release.
+Version tags are separate Git references, not commits pushed “into” main. Do not move or delete an already published tag to rerun it; fix the issue and use the next beta number. To retry an infrastructure failure before publication, rerun the failed workflow. If an interrupted publisher left an unpublished draft, rerunning resumes it only when its provenance marker matches the exact commit and its assets belong to this build. Published releases, drafts from other commits, and drafts with unexpected assets are never overwritten.
 
 ## Configure macOS signing once
 

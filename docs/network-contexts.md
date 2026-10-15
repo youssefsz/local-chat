@@ -13,3 +13,9 @@ This conservative combination distinguishes ordinary networks with identical SSI
 ## Required scenarios
 
 Automated adapter-policy fixtures cover same-evidence reconnect, different gateways, identical SSID/range with different hardware, familiar groups moving together, simultaneous interfaces, VPN selection, absent evidence and export generation changes. Physical Wi-Fi/Ethernet changes, VPN activation, sleep/wake and two-router discovery remain manual until actually exercised. See testing.md for outcomes.
+
+## Windows and Linux adapter implementation
+
+The portable adapter reads OS default-interface/gateway information using netdev. Windows additionally checks IP Helper hardware/connector flags; Linux requires a real sysfs device outside `/sys/devices/virtual`. The interface must be up, Wi-Fi/Ethernet, and have one unambiguous local IPv4 address and gateway. A gateway MAC, when available, supplies the existing context digest; an absent MAC keeps recognition conservative. No SSID/location access is requested.
+
+Windows route/address/interface notifications and Linux RTNETLINK groups invalidate the export generation. The generation guard blocks frame export while evidence is being reevaluated. TCP sockets are scoped to the interface and local address, and portable DNS-SD enables only that interface's IPv4 index. Observer/binding errors disable sharing. These implementations do not certify VPN, router movement, or cross-device behavior on Windows/Linux; those remain explicit physical checks in platform-status.md.

@@ -1077,7 +1077,8 @@
         <section class="startup-error" aria-labelledby="startup-title">
           <h1 id="startup-title">Local Chat couldn’t open</h1>
           <p>
-            Check access to your login keychain and app data, then try again.
+            Check access to your device’s secure storage and app data, then try
+            again.
           </p>
           <details>
             <summary>Show details</summary>

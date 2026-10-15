@@ -1,0 +1,26 @@
+{
+  "conclusion": "success",
+  "headSha": "a2f69664cbd4efccb0cbad32d870be58ebf0dee4",
+  "jobs": [
+    {
+      "name": "installers / macOS ARM64",
+      "conclusion": "success",
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38704749927/job/116321764744"
+    },
+    {
+      "name": "installers / Linux x64",
+      "conclusion": "success",
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38704749927/job/116321765002"
+    },
+    {
+      "name": "installers / Windows x64 unsigned",
+      "conclusion": "success",
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38704749927/job/116321765024"
+    }
+  ],
+  "url": "https://github.com/youssefsz/local-chat/actions/runs/38704749927",
+  "windows_signing": "Intentionally unsigned",
+  "macos_ci_signing": "Ad-hoc CI test build; notarization is required only in the release workflow",
+  "development": "npm run dev:app launched with isolated app.localchat.desktop.dev/test-profile data; frontend ready and native show timing recorded separately from production",
+  "physical_validation": "Windows/Linux cross-device, firewall, and desktop checks remain pending"
+}
