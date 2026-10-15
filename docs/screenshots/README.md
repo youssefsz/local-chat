@@ -1,7 +1,7 @@
 # Native application screenshots
 
-The Light and Dark 1280×720 captures show the native QA application with isolated synthetic conversations.
-They use the real frontend and Rust storage. No test fixture is included in production, and no private chat history is published here.
+The shared [Light](../../website/public/assets/app-light.jpg) and [Dark](../../website/public/assets/app-dark.jpg) captures show Local Chat 0.0.1 with isolated synthetic workshop messages. The website and repository README use these same assets.
 
-Capture new images from the dedicated QA build after UI changes. Keep the same logical dimensions and both appearances.
-Retain only representative documentation images in Git. Put transient QA captures and reports in ignored local artifacts or CI artifacts.
+The native QA window uses a 1280×900 logical content area, captured at 2560×1800. Window decorations are disabled only in the capture build to exclude macOS control chrome. Capture a fresh window before computer-use input so no pointer overlay appears. Keep both appearances free of cursor and control-indicator artifacts.
+
+These captures use the real frontend and Rust storage. No sample data or capture configuration is included in production, and no private chat history is published. Keep transient captures in ignored local artifacts.

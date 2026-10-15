@@ -93,7 +93,7 @@ Guide and release pages use a 1:2 grid. Guide navigation sticks near the top whi
 
 ## Elevation & Depth
 
-Pages use flat fills and open spacing. The screenshot has one quiet border and retains its native window chrome. Only the open mobile navigation panel adds a small shadow, `0 8px 24px #292b2914`, to separate its overlay from the page.
+Pages use flat fills and open spacing. The screenshot has one quiet border around the full app content, with no imitation title bar. Only the open mobile navigation panel adds a small shadow, `0 8px 24px #292b2914`, to separate its overlay from the page.
 
 ## Shapes
 
@@ -113,7 +113,7 @@ The hero uses the native app image directly, without a fabricated HTML conversat
 
 Light and Dark buttons below the image form a labeled group with `aria-pressed` state. Each has a 44px minimum height; the selected button uses a neutral fill and hover uses the accent wash. Selection updates the image, descriptive alternative text, image link, and visible full-size link. It changes the displayed capture only; the website keeps its light page appearance and saves no preference.
 
-`public/assets/app-light.jpg` and `app-dark.jpg` are native macOS captures from an isolated 0.0.1 preview profile. Each is 2560 by 1600 pixels, displayed with 1280 by 800 intrinsic HTML dimensions. They show synthetic Alex workshop messages, General and Workshop rooms, an honest zero connected peers count, waiting-for-peers delivery labels, and a blank composer. They publish no real conversation. The operating-system screenshot indicator and captured pointer in the native title bar are part of the existing source captures. These images demonstrate appearance, not cross-platform or physical multi-computer verification.
+`public/assets/app-light.jpg` and `app-dark.jpg` are native macOS captures from an isolated 0.0.1 preview profile. Each is 2560 by 1800 pixels, displayed with 1280 by 900 intrinsic HTML dimensions. They show synthetic Alex workshop messages, General and Workshop rooms, an honest zero connected peers count, waiting-for-peers delivery labels, and a blank composer. They publish no real conversation. A dedicated test-profile bundle sets `decorations: false` only for capture, excluding the operating-system title bar and control badge. Each appearance is captured immediately after a fresh launch, before computer-use input can add a pointer overlay. Both images show the full app content without cropping or retouching, with no cursor or badge. The production app retains its native window decorations. These images demonstrate appearance, not cross-platform or physical multi-computer verification.
 
 ### Reading and release content
 

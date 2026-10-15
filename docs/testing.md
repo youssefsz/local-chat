@@ -99,7 +99,7 @@ Five Node tests pass for page metadata/local links, complete stable-release vali
 
 A merged website change automatically triggered Cloudflare Workers Builds on `main`, deployed successfully, and changed the production content. Its watch path is `website/**`; website changes do not create an app release.
 
-Manual browser checks covered desktop 1440px, tablet 768px, mobile 390px, and the 1280px working viewport. The revised centered hero has no horizontal overflow, retains the complete native screenshot on mobile, and uses an eager high-priority image. Light/Dark selection updates the image, pressed state, and full-size destination. The hero Download action reaches the platform download page. This is manual browser evidence, not an automated frontend interaction suite. Existing platform and physical-LAN limitations below still apply.
+Manual browser checks covered desktop 1440px, tablet 768px, mobile 390px, and the 1280px working viewport. The revised centered hero has no horizontal overflow, retains the complete native screenshot on mobile, and uses an eager high-priority image. Light/Dark selection updates the image, pressed state, and full-size destination. The hero Download action reaches the platform download page. Light and Dark screenshot assets were recaptured from a fresh isolated preview window with decorations disabled for capture only; both 2560×1800 images were visually checked for cursor and computer-use indicator artifacts. This is manual browser evidence, not an automated frontend interaction suite. Existing platform and physical-LAN limitations below still apply.
 
 ## Pending physical and interaction checks
 
