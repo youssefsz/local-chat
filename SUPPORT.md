@@ -1,7 +1,7 @@
 # Get help with Local Chat
 
 Use the [bug report form](https://github.com/youssefsz/local-chat/issues/new?template=bug.yml) for reproducible problems.
-For usage questions, open an [issue](https://github.com/youssefsz/local-chat/issues/new) with the `question` label.
+For usage questions, open an [issue](https://github.com/youssefsz/local-chat/issues/new) and describe what you need help with. Maintainers apply the `question` label.
 For vulnerabilities, use [private reporting](SECURITY.md).
 
 ## Check a connection
