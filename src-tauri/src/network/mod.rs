@@ -136,7 +136,7 @@ impl Engine {
                     if let Some(e)=evidence.clone(){
                         let fingerprint=e.fingerprint();
                         let activated=self.store.lock().await.activate(fingerprint.as_deref(),if fingerprint.is_some(){"Local network"}else{"Unrecognized network"});
-                        if activated.is_ok() && crate::platform::network_generation()==generation{self.context_generation.store(generation,Ordering::Release);let cancel=self.stop.child_token();current=Some(cancel.clone());let engine=self.clone();tokio::spawn(async move{if let Err(_err)=engine.clone().serve(e,cancel.clone()).await&& !cancel.is_cancelled(){*engine.status.lock().await=("unavailable".into(),"Local discovery is unavailable. Check Local Network access in System Settings. Retrying automatically.".into());engine.changed();cancel.cancel();}});}
+                        if activated.is_ok() && crate::platform::network_generation()==generation{self.context_generation.store(generation,Ordering::Release);let cancel=self.stop.child_token();current=Some(cancel.clone());let engine=self.clone();tokio::spawn(async move{if let Err(_err)=engine.clone().serve(e,cancel.clone()).await&& !cancel.is_cancelled(){*engine.status.lock().await=("unavailable".into(),"Local discovery is unavailable. Check local-network permissions and your firewall. Retrying automatically.".into());engine.changed();cancel.cancel();}});}
                     }else{*self.status.lock().await=("unavailable".into(),"Connect to Wi-Fi or Ethernet. VPN interfaces are not shared.".into());}
                     last=evidence;self.changed();
                 }
@@ -153,7 +153,7 @@ impl Engine {
         cancel: CancellationToken,
     ) -> Result<()> {
         let socket = TcpSocket::new_v4()?;
-        crate::platform::bind_physical_socket(&socket, &evidence.interface)?;
+        crate::platform::bind_physical_socket(&socket, &evidence)?;
         socket.bind(SocketAddr::new(IpAddr::V4(evidence.address), 0))?;
         let listener = socket.listen(32)?;
         let port = listener.local_addr()?.port();
@@ -187,10 +187,10 @@ impl Engine {
                         let endpoint=SocketAddr::new(IpAddr::V4(ip),port);
                         if let Some((old_endpoint,old_cert,old_cancel))=dials.get(&peer){if *old_endpoint==endpoint && *old_cert==cert {continue}old_cancel.cancel();}
                         let child=cancel.child_token();dials.insert(peer.clone(),(endpoint,cert.clone(),child.clone()));
-                        let engine=self.clone();let context=context.clone();let local=evidence.address;let interface=evidence.interface.clone();
+                        let engine=self.clone();let context=context.clone();let local=evidence.address;let scope=evidence.clone();
                         sessions.spawn(async move{let mut attempt=0u32;loop{if child.is_cancelled(){break}
                             let result=tokio::select!{_=child.cancelled()=>break,result=async{
-                                let socket=TcpSocket::new_v4()?;crate::platform::bind_physical_socket(&socket,&interface)?;socket.bind(SocketAddr::new(IpAddr::V4(local),0))?;
+                                let socket=TcpSocket::new_v4()?;crate::platform::bind_physical_socket(&socket,&scope)?;socket.bind(SocketAddr::new(IpAddr::V4(local),0))?;
                                 let tcp=timeout(Duration::from_secs(5),socket.connect(SocketAddr::new(IpAddr::V4(ip),port))).await??;
                                 let connector=tls::client(cert.clone());let stream=timeout(Duration::from_secs(5),connector.connect("localchat.local".try_into()?,tcp)).await??;
                                 let binding=stream.get_ref().1.export_keying_material([0u8;32],b"localchat identity v1",None)?;
@@ -203,7 +203,7 @@ impl Engine {
                         }});
                     },
                     discovery::DiscoveryEvent::Removed(fullname)=>{if let Some(peer)=dials.keys().find(|peer|fullname.contains(&peer[..16])).cloned(){if let Some((_,_,child))=dials.remove(&peer){child.cancel();}self.peers.lock().await.remove(&peer);self.changed();}},
-                    discovery::DiscoveryEvent::Failure(message)=>{self.store.lock().await.set_meta("last_discovery_error",&message)?;anyhow::bail!("Local discovery could not start. Allow Local Network access in System Settings. Local Chat retries automatically.");}
+                    discovery::DiscoveryEvent::Failure(message)=>{self.store.lock().await.set_meta("last_discovery_error",&message)?;anyhow::bail!("Local discovery could not start. Check local-network permissions and your firewall. Local Chat retries automatically.");}
                 }}
             }
         }

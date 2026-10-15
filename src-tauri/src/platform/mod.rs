@@ -1,4 +1,6 @@
-use anyhow::{Context as _, Result};
+#[cfg(target_os = "macos")]
+use anyhow::Context as _;
+use anyhow::Result;
 use ed25519_dalek::SigningKey;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -81,6 +83,7 @@ pub struct NetworkEvidence {
     // Set only after the OS adapter verifies physical interface evidence.
     physical: bool,
     pub interface: String,
+    pub interface_index: u32,
     pub address: Ipv4Addr,
     pub mask: Ipv4Addr,
     pub gateway: Ipv4Addr,
@@ -166,9 +169,12 @@ mod portable;
 #[cfg(any(target_os = "windows", target_os = "linux"))]
 pub use portable::{bind_physical_socket, network_evidence, network_generation};
 #[cfg(target_os = "macos")]
-pub fn bind_physical_socket(socket: &tokio::net::TcpSocket, interface: &str) -> Result<()> {
+pub fn bind_physical_socket(
+    socket: &tokio::net::TcpSocket,
+    evidence: &NetworkEvidence,
+) -> Result<()> {
     use std::os::fd::AsRawFd;
-    let name = std::ffi::CString::new(interface)?;
+    let name = std::ffi::CString::new(evidence.interface.as_str())?;
     // The borrowed socket descriptor stays valid for this synchronous setsockopt call.
     if unsafe { localchat_bind_interface(socket.as_raw_fd(), name.as_ptr()) } != 0 {
         return Err(std::io::Error::last_os_error().into());
@@ -203,6 +209,7 @@ pub fn network_evidence() -> Result<NetworkEvidence> {
     let mac = gateway_hardware(&interface, gateway);
     Ok(NetworkEvidence {
         physical: true,
+        interface_index: iface.index.context("Missing physical interface index")?,
         interface,
         address: v4.ip,
         mask: v4.netmask,
@@ -216,6 +223,7 @@ mod tests {
     fn sample() -> NetworkEvidence {
         NetworkEvidence {
             physical: true,
+            interface_index: 1,
             interface: "en0".into(),
             address: "192.168.0.2".parse().unwrap(),
             mask: "255.255.255.0".parse().unwrap(),

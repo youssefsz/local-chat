@@ -45,17 +45,12 @@ impl Discovery {
         // Queue scoping before registering or browsing. IPv6 is explicitly excluded.
         let initialized = (|| -> Result<_> {
             daemon.disable_interface(IfKind::All)?;
-            let index = netdev::get_interfaces()
-                .into_iter()
-                .find(|i| i.name == evidence.interface)
-                .ok_or_else(|| anyhow::anyhow!("Network interface disappeared"))?
-                .index;
-            daemon.enable_interface(IfKind::IndexV4(index))?;
+            daemon.enable_interface(IfKind::IndexV4(evidence.interface_index))?;
             let info = ServiceInfo::new(
                 &service,
                 &format!("lc-{}", &peer[..16]),
                 &format!("lc-{}.local.", &peer[..16]),
-                evidence.address,
+                std::net::IpAddr::V4(evidence.address),
                 port,
                 &[
                     ("protocol", "localchat"),
