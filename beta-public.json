@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "notes": "The first public Local Chat release. Share text, links, and code in public rooms with nearby computers on the same local network, without accounts or a separately installed server.\n\nIncludes automatic discovery, encrypted peer connections, local history and search, room drafts, exact code copying, Light/Dark/System appearance, background notifications, Reconnect controls, and signed in-app update packages.\n\nAdds the official website, getting started guide, privacy policy, terms, and latest stable downloads at https://local-chat.youssef.tn. Website and policy links are available in Settings and the native Help menu.\n\nEarlier test releases used 0.1.0-beta versions. Install 0.0.1 manually and choose the Stable update channel. The version reset does not bypass updater downgrade protection. Saved conversations stay in the same app data folder.",
+  "pub_date": "2026-10-15T19:14:26+01:00",
+  "platforms": {
+    "darwin-aarch64": {
+      "url": "https://github.com/youssefsz/local-chat/releases/download/v0.0.1/Local-Chat_0.0.1_macos-arm64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRE85dlFZVjJadW8wdFFWVS9FMStvd2t5c21rQ1krNU9vd01QS1I4M3pxTFdkQWIyaFk4VjFiYVZKMFpySjJVUDd0ZGlrMVFTLzJBVEQvQnZSM29mNEkyQng0MXhqSWdnPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDg5NzYxCWZpbGU6TG9jYWwgQ2hhdC5hcHAudGFyLmd6CXZlcnNpb246MC4wLjEKOEFDTUdXcU5LWXZ4QWZUa1pxNXBPczRMbTV6cTJBUU5LOEdWNkpYcnc2YnhJeTlScmV6ZTFnNEhZRW00eVZDRmlxR0oraGJaT0VmT2M5dU50WXovQ2c9PQo="
+    },
+    "windows-x86_64": {
+      "url": "https://github.com/youssefsz/local-chat/releases/download/v0.0.1/Local-Chat_0.0.1_windows-x64.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRE85dlFZVjJadWcvWUxJM1k5WDBYSk5tQWw0TCtLTXo0bFpabHB0VVEwSHhNc0NoMEZNbmZQTStZZUd4NFdteFJScEliQzZvRmN5RGN4a01NV2hXQ0dKNjVNbVF5bHcwPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDg4NTgxCWZpbGU6TG9jYWwgQ2hhdF8wLjAuMV94NjQtc2V0dXAuZXhlCXZlcnNpb246MC4wLjEKNU9aNnU2b0FKcUFmUlhGa0MwRnZtaTBHTmprSm9RQW9reWthdElJZjRVMGdNbjdwN0puaXNVVlVoVHd0WEtibzNSRUU1MUkwSk5MbmxVZlNHVjBuQWc9PQo="
+    },
+    "linux-x86_64": {
+      "url": "https://github.com/youssefsz/local-chat/releases/download/v0.0.1/Local-Chat_0.0.1_linux-x64.AppImage",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRE85dlFZVjJadW1Cb2E1Mno5RGErVHN0RmROdGttWjF6NUNZVzBoVHQ2YWFEYUFndWlsM1JlaU54a2NYaFJxUndZaXdSSm1mMFpyd1djNU9DTTJSeG9jM1hzK0c3blFJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDg4NTc5CWZpbGU6TG9jYWwgQ2hhdF8wLjAuMV9hbWQ2NC5BcHBJbWFnZQl2ZXJzaW9uOjAuMC4xCkx2SGIya01QN1FGV213Z2o2akxLSDMxdzBpR05UWTYza28zZ1BHZXY3Skc1SzJjRytRQlE5NmtaSHhVd0xZdHUzUFhRSUE2UjNST2syS3pWcmlReURRPT0K"
+    }
+  }
+}
