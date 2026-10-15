@@ -2,6 +2,7 @@ for (const button of document.querySelectorAll('[data-appearance]')) {
   button.addEventListener('click', () => {
     const dark = button.dataset.appearance === 'dark';
     const image = document.querySelector('#app-screenshot');
+    document.querySelector('#app-window').dataset.theme = dark ? 'dark' : 'light';
     image.src = dark ? '/assets/app-dark.jpg' : '/assets/app-light.jpg';
     image.alt = `Local Chat in ${dark ? 'Dark' : 'Light'} appearance, with rooms on the left and a sample conversation and code snippet on the right`;
     document.querySelector('#screenshot-link').href = image.src;

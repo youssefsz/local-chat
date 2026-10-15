@@ -211,13 +211,59 @@ img {
   max-width: 1120px;
   margin: 40px auto 0;
 }
-.hero-preview > a {
+.app-window {
+  --window-surface: #faf9f7;
+  --window-line: var(--line);
+  --window-ink: var(--secondary);
+  overflow: hidden;
+  border: 1px solid var(--window-line);
+  border-radius: 10px;
+}
+.app-window:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 5px;
+}
+.app-window[data-theme='dark'] {
+  --window-surface: #272c29;
+  --window-line: #353c36;
+  --window-ink: #b0b8ad;
+}
+.window-bar {
+  height: 34px;
+  padding-inline: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  background: var(--window-surface);
+  color: var(--window-ink);
+  border-bottom: 1px solid var(--window-line); /* taste-skill-ignore: intrinsic separator in the requested macOS preview frame */
+}
+.window-controls {
+  display: flex;
+  gap: 7px;
+}
+.window-controls > span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ff5f57;
+}
+.window-controls > span:nth-child(2) {
+  background: #febc2e;
+}
+.window-controls > span:nth-child(3) {
+  background: #28c840;
+}
+.window-title {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+}
+.app-window > a {
   display: block;
 }
 .hero-preview img {
   width: 100%;
-  border-radius: 6px;
-  border: 1px solid var(--line);
 }
 .hero-preview figcaption {
   display: flex;
@@ -574,6 +620,23 @@ img {
   }
   .hero-preview {
     margin-top: 36px;
+  }
+  .app-window {
+    border-radius: 8px;
+  }
+  .window-bar {
+    height: 28px;
+    padding-inline: 10px;
+  }
+  .window-controls {
+    gap: 5px;
+  }
+  .window-controls > span {
+    width: 8px;
+    height: 8px;
+  }
+  .window-title {
+    font-size: 11px;
   }
   .hero-preview figcaption {
     flex-direction: column;
