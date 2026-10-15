@@ -396,14 +396,6 @@ pub fn run() {
             if let Some(first) = menu.items()?.first().and_then(|i| i.as_submenu()) {
                 first.insert(&update_item, 1)?;
             }
-            #[cfg(not(target_os = "macos"))]
-            if let Some(help) = menu
-                .get(tauri::menu::HELP_SUBMENU_ID)
-                .and_then(|i| i.as_submenu().cloned())
-            {
-                help.append(&update_item)?;
-            }
-            app.manage(UpdateMenu(update_item));
             let help = if let Some(help) = menu
                 .get(tauri::menu::HELP_SUBMENU_ID)
                 .and_then(|item| item.as_submenu().cloned())
@@ -415,6 +407,9 @@ pub fn run() {
                 menu.append(&help)?;
                 help
             };
+            #[cfg(not(target_os = "macos"))]
+            help.append(&update_item)?;
+            app.manage(UpdateMenu(update_item));
             for (id, label) in [
                 ("website", "Local Chat Website"),
                 ("guide", "Getting Started"),
