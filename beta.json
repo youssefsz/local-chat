@@ -1,0 +1,19 @@
+{
+  "version": "0.1.0-beta.6",
+  "notes": "Adds the installed version in Settings, Check for Updates in Settings and the macOS app menu, quiet daily checks, beta/stable channels, release notes, verified downloads and Restart to update. Drafts are saved before restart; downloaded updates remain available after quitting. Chat stays usable offline.\n\nUpdate packages are signed separately from Apple code signing and bind the signature to the announced version. macOS remains Developer ID signed and notarized. Windows remains unsigned. Linux AppImage updates install in the app; Debian installations use downloaded packages.\n\nUsers of beta.5 and earlier need to install this release manually once to enable future in-app updates.",
+  "pub_date": "2026-10-15T13:53:20+01:00",
+  "platforms": {
+    "darwin-aarch64": {
+      "url": "https://github.com/youssefsz/local-chat/releases/download/v0.1.0-beta.6/Local-Chat_0.1.0-beta.6_macos-arm64.app.tar.gz",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRE85dlFZVjJadXJmbUhVNUl6Mk1RZmluN28rRFA0SzlrL2tjMHc2NVYxV3VGSVhtaXY3UGlEc0U1TVZZMGZpVFA0bXNaTHhhK0V0ckV6d0RUMTlJWGtsWmZtRGV1RVFvPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDY5NDMyCWZpbGU6TG9jYWwgQ2hhdC5hcHAudGFyLmd6CXZlcnNpb246MC4xLjAtYmV0YS42CjR4eFdJay9hUFhHVytvNGRBQmJiaStwK1V4QXhCcWRMTjBKcFoxbU1KN091TWtNTTBmNmpwZ2d2cWYxSEMwcG1mRU9qWGt4NSt2eXFvTzB4RXFTM0FBPT0K"
+    },
+    "windows-x86_64": {
+      "url": "https://github.com/youssefsz/local-chat/releases/download/v0.1.0-beta.6/Local-Chat_0.1.0-beta.6_windows-x64.exe",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRE85dlFZVjJadW04Mmk2VzVzVG5XSUhRRmdxZTNyNk1KSjl2U3lTM0tscDdMWHIzMjZid25sejFBcVNMc0lSV0hRY3VGWVNBV0lXWFRrQjhha1N6WHBVbktUcmxJaEFrPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDY5Mzc0CWZpbGU6TG9jYWwgQ2hhdF8wLjEuMC1iZXRhLjZfeDY0LXNldHVwLmV4ZQl2ZXJzaW9uOjAuMS4wLWJldGEuNgowTGhsNnd5S1dYV2FtRmtaL2ZEOGp5bVY0cmowN2dIUXpmQ09ZZURyWG9tS21JamQyTGRuc1VnVUtjeCtJeXdHaFJMM1dkZW1oMnJwdlUvQkQ0NnpCdz09Cg=="
+    },
+    "linux-x86_64": {
+      "url": "https://github.com/youssefsz/local-chat/releases/download/v0.1.0-beta.6/Local-Chat_0.1.0-beta.6_linux-x64.AppImage",
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRE85dlFZVjJadXBHbkJQUTYrRDZFeTFvYUMwN3BBcnVlQWw4Q2FLekU1bG9PVTZ6MlBMSWRpemJqVXcrZ1pYV0ZBWDc4WnAwcm15N0VRUExtWkJGTVIrWE5tVm56bEFNPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzkyMDY5MTk3CWZpbGU6TG9jYWwgQ2hhdF8wLjEuMC1iZXRhLjZfYW1kNjQuQXBwSW1hZ2UJdmVyc2lvbjowLjEuMC1iZXRhLjYKa0xNOE01WU5BemJuUTBZSEdJSkQySzZQSEsrZzk0eFMwbWI0LzY1c0N1S0RNNWU2QTFMdzcrV21HVUFDdGRNZ3dkNzdYNEdJcmpXTVZ4QzIrMXFWQ3c9PQo="
+    }
+  }
+}
