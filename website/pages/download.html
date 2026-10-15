@@ -97,13 +97,47 @@
     · <a href="/releases">Release notes</a> ·
     <a href="/get-started">Getting started guide</a>
   </p>
-  <h2>Coming from a beta?</h2>
+  <h2 id="beta-upgrade">Coming from a beta?</h2>
   <p>
     The first public release is numbered 0.0.1. Earlier test builds used
     0.1.0-beta versions, which sort higher. Install 0.0.1 manually, then choose
     the Stable update channel in Settings. Saved conversations stay in the same
     app data folder. The updater never forces a downgrade.
   </p>
+  <details class="beta-migration">
+    <summary>Upgrade an earlier beta safely</summary>
+    <ol>
+      <li>Quit Local Chat, including its background process.</li>
+      <li>
+        If the <code>updates</code> folder below exists, rename only that folder
+        to <code>updates-before-0.0.1</code>. This sets aside cached test
+        installers. Keep the database, identity, and all other files in place.
+      </li>
+      <li>
+        Install 0.0.1 manually, open it, and choose the Stable update channel in
+        Settings.
+      </li>
+    </ol>
+    <p>
+      Cached installers from the test series have higher version numbers. Moving
+      that cache prevents the app from offering an old test build again.
+    </p>
+    <ul>
+      <li>
+        macOS:
+        <code>~/Library/Application Support/app.localchat.desktop/updates</code>
+      </li>
+      <li>Windows: <code>%APPDATA%\app.localchat.desktop\updates</code></li>
+      <li>
+        Linux: <code>$XDG_DATA_HOME/app.localchat.desktop/updates</code>,
+        usually <code>~/.local/share/app.localchat.desktop/updates</code>.
+      </li>
+    </ul>
+    <p>
+      Fresh installations can skip these steps. Renaming the installer cache
+      does not remove your saved conversations.
+    </p>
+  </details>
   <h2>Updates after that.</h2>
   <p>
     Open Settings and choose Check for updates. macOS, Windows, and Linux
