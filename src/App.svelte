@@ -1455,6 +1455,17 @@
         onclick={() => openUpdates(true)}>Check for updates…</button
       >
     </div>
+    <nav class="settings-links" aria-label="Local Chat information">
+      {#each [['https://local-chat.youssef.tn', 'Website'], ['https://local-chat.youssef.tn/get-started', 'Help'], ['https://local-chat.youssef.tn/privacy', 'Privacy policy'], ['https://local-chat.youssef.tn/terms', 'Terms']] as [url, label]}
+        <a
+          href={url}
+          onclick={(event) => {
+            event.preventDefault();
+            if (url) void openLink(url);
+          }}>{label}</a
+        >
+      {/each}
+    </nav>
     <div class="dialog-actions">
       <button
         class="button"

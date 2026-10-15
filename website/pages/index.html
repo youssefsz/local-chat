@@ -1,0 +1,181 @@
+<!--{"title":"Local Chat","description":"Share messages, links, and code with nearby computers on the same local network. No account or cloud server. Free for macOS, Windows, and Linux."}-->
+<section class="hero">
+  <div class="hero-copy">
+    <h1>Chat stays nearby.</h1>
+    <p>
+      Share a link, a thought, or a bit of code with the computers on your local
+      network.
+    </p>
+    <a class="button primary" href="/download"
+      >Download Local Chat
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 12h14m-6-6 6 6-6 6" /></svg
+    ></a>
+    <p class="small">
+      Free. Open source. No account needed.<br />For macOS, Windows, and Linux.
+    </p>
+  </div>
+  <div class="demo-wrap">
+    <div class="conversation-demo" data-ui>
+      <div class="demo-header">
+        <span class="room-hash">#</span><strong>General</strong
+        ><span>A place to share</span>
+      </div>
+      <div class="demo-message">
+        <span class="avatar">S</span>
+        <div>
+          <strong>Sam</strong>
+          <p>Here’s the little script from earlier.</p>
+        </div>
+      </div>
+      <div class="demo-message">
+        <span class="avatar own">Y</span>
+        <div>
+          <strong>You</strong>
+          <div class="code-example">
+            <div>
+              <span>JavaScript</span
+              ><button
+                type="button"
+                id="copy-code"
+                aria-label="Copy example code"
+              >
+                Copy code
+              </button>
+            </div>
+            <pre><code id="example-code">const nearby = ["a thought", "a link", "some code"];
+
+for (const thing of nearby) {
+  share(thing);
+}</code></pre>
+          </div>
+        </div>
+      </div>
+      <div class="demo-bottom">
+        <span>One network. A shared conversation.</span>
+      </div>
+    </div>
+    <p class="demo-caption">An example conversation. Try copying the code.</p>
+    <p id="copy-status" class="sr-only" role="status"></p>
+  </div>
+</section>
+<section class="intro-section">
+  <h2>Already in the same room?</h2>
+  <p>
+    Keep the conversation there, too. Local Chat finds other running copies on
+    your network and connects them directly. There’s no server to set up and no
+    invite link to pass around.
+  </p>
+</section>
+<section class="app-showcase" aria-labelledby="look-title">
+  <div class="showcase-heading">
+    <h2 id="look-title">A familiar place to talk.</h2>
+    <div class="appearance" role="group" aria-label="Screenshot appearance">
+      <button type="button" data-appearance="light" aria-pressed="true">
+        Light</button
+      ><button type="button" data-appearance="dark" aria-pressed="false">
+        Dark
+      </button>
+    </div>
+  </div>
+  <figure>
+    <a
+      href="/assets/app-light.jpg"
+      id="screenshot-link"
+      aria-label="Open full size app screenshot"
+      ><img
+        id="app-screenshot"
+        src="/assets/app-light.jpg"
+        width="1280"
+        height="720"
+        alt="Local Chat in Light appearance, with rooms on the left and a sample conversation and code snippet on the right"
+        loading="lazy"
+    /></a>
+    <figcaption>
+      The desktop app, shown with sample messages. Your conversations live on
+      your computer.
+    </figcaption>
+  </figure>
+</section>
+<section class="explain-section">
+  <div>
+    <h2>Small things, <br />worth getting right.</h2>
+    <a href="/get-started">Read the getting started guide</a>
+  </div>
+  <div class="explain-body">
+    <p>
+      <strong>A room for the topic.</strong> Start in General or create a named
+      room. Every room on the current network is open to everyone using Local
+      Chat there.
+    </p>
+    <p>
+      <strong>Copy it exactly.</strong> Send plain text, links, or code. Copy a
+      snippet without losing its spacing, then find it again with local message
+      search.
+    </p>
+    <p>
+      <strong>Pick up where you left off.</strong> History and drafts stay on
+      your computer. When peers reconnect, they catch up on missing messages.
+    </p>
+    <p>
+      <strong>Keep old networks separate.</strong> Conversations from a previous
+      network stay readable locally. The app keeps them out of a new network’s
+      conversation.
+    </p>
+  </div>
+</section>
+<section class="network-section">
+  <h2>No internet in the loop.</h2>
+  <p>
+    After installation, nearby chat works without an internet connection. Your
+    messages travel between the computers on your local network.
+  </p>
+  <p class="small">
+    Website visits, downloads, and optional update checks use the internet.
+    Rooms are public to the local network, so use Local Chat with people and
+    networks you trust.
+  </p>
+  <a href="/privacy">How Local Chat handles your data</a>
+</section>
+<section class="faq-section">
+  <h2>Before you open it.</h2>
+  <div>
+    <details>
+      <summary>Do we need the same Wi-Fi?</summary>
+      <p>
+        You need the same local network. Wi-Fi and Ethernet can work together.
+        Guest networks, VPNs, and router isolation can prevent computers from
+        finding each other.
+      </p>
+    </details>
+    <details>
+      <summary>Can I use it with someone far away?</summary>
+      <p>
+        Local Chat is built for nearby computers. It does not have a cloud relay
+        or an internet messaging service.
+      </p>
+    </details>
+    <details>
+      <summary>Are the rooms private?</summary>
+      <p>
+        No. Everyone running Local Chat on the current network can see the rooms
+        and their messages. Connections are encrypted, but nearby discovery does
+        not verify a person’s real identity.
+      </p>
+    </details>
+    <details>
+      <summary>What happens when I close the window?</summary>
+      <p>
+        The app keeps receiving in the background. Choose Quit from the app menu
+        to stop it. Your saved conversations remain on the computer.
+      </p>
+    </details>
+  </div>
+</section>
+<section class="closing">
+  <h2>Open it.<br />Say something.</h2>
+  <div>
+    <p>Get Local Chat onto the computers around you.</p>
+    <a class="button primary" href="/download">Download Local Chat</a>
+  </div>
+</section>

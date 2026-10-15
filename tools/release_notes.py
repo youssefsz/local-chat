@@ -85,7 +85,7 @@ Updater archives and `.sig` files are used by Local Chat's update system.
 
 ## Upgrading and limitations
 
-Choose **Check for Updates** in Settings. Users of beta.5 and earlier need one manual upgrade to an updater-enabled release.
+Choose **Check for Updates** in Settings. For the first public 0.0.1 release, users of the earlier 0.1.0-beta test series need a manual installation and must choose the Stable update channel. Updater downgrade protection remains enabled.
 Linux AppImage supports in-app updates; Debian installations use downloaded packages. Saved chats stay on the computer.
 Physical Windows and Linux desktop, LAN, and update-installation checks remain pending. See [platform status](https://github.com/{REPO}/blob/main/docs/platform-status.md).
 

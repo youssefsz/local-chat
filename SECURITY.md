@@ -12,8 +12,8 @@ This volunteer project does not promise a response deadline or a bounty.
 
 ## Supported versions
 
-Security fixes target the newest published release in the current beta series. Upgrade older beta builds before retesting.
-There is no stable release or long-term support series yet. The [release page](https://github.com/youssefsz/local-chat/releases) identifies current downloads.
+Security fixes target the latest published stable release. Earlier beta test builds are not a supported release series. Upgrade them manually to 0.0.1 and choose the Stable update channel before retesting.
+There is no long-term support series. The [release page](https://github.com/youssefsz/local-chat/releases/latest) identifies current downloads.
 
 ## Security boundaries
 

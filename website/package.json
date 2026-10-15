@@ -1,0 +1,12 @@
+{
+  "name": "local-chat-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test test/*.test.mjs",
+    "dev": "npm run build && wrangler dev --ip 127.0.0.1",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": { "wrangler": "4.151.0" }
+}
