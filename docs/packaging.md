@@ -1,6 +1,6 @@
 # Packaging and distribution
 
-Bundle identifier: `app.localchat.desktop`. Product name: Local Chat. Current version: 0.1.0-beta.1. The available build targets aarch64 macOS, minimum declared version 12.0. Intel macOS and universal binaries are outside the supported matrix. CI builds Windows x64 NSIS and Linux x64 AppImage/Debian installers on native GitHub runners; Windows signing is intentionally disabled.
+Bundle identifier: `app.localchat.desktop`. Product name: Local Chat. Run `npm run release:check` to read the current synchronized version. The available build targets aarch64 macOS, minimum declared version 12.0. Intel macOS and universal binaries are outside the supported matrix. CI builds Windows x64 NSIS and Linux x64 AppImage/Debian installers on native GitHub runners; Windows signing is intentionally disabled.
 
 The custom Info.plist includes NSLocalNetworkUsageDescription and NSBonjourServices for `_localchat._tcp`. Window controls, native menus and the template menu-bar icon use Tauri's OS integration. Distribution contains no test-profile feature or test control server.
 

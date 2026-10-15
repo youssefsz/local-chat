@@ -28,11 +28,11 @@ Release helper scripts require Python 3.11 or later and the authenticated GitHub
 Use `0.1.0-beta.1`, `0.1.0-beta.2`, then optionally `0.1.0-rc.1`. The first non-beta release is `0.1.0`. Pre-release versions do not consume `0.1.0`. Published tags and assets are never overwritten.
 
 ```sh
-npm run version:app -- 0.1.0-beta.2
+npm run version:app -- 0.1.0-beta.4
 npm run release:check
 # Commit the synchronized manifest and lockfile changes, then merge/push main.
-git tag -a v0.1.0-beta.2 -m "Local Chat 0.1.0-beta.2"
-git push origin v0.1.0-beta.2
+git tag -a v0.1.0-beta.4 -m "Local Chat 0.1.0-beta.4"
+git push origin v0.1.0-beta.4
 ```
 
 `Release` checks that the tag matches all manifests and points to a commit on main. It rebuilds and tests every target. The macOS release must be Developer ID signed and notarized; missing credentials fail the release rather than silently producing an ad-hoc package. A final job stages a draft release, uploads all four installers and SHA256SUMS, then publishes. A failed upload leaves a draft. Beta/RC tags are prereleases and do not replace the latest regular release. A regular tag publishes a regular release.
@@ -56,5 +56,9 @@ The current signing identity is `Developer ID Application: Youssef Dhibi (5S4ZT4
 5. Push the first beta tag after CI passes. Release CI imports the identity into a temporary keychain, signs/notarizes with Tauri, verifies the stapled app ticket and Gatekeeper assessment, then deletes the temporary keychain. GitHub runners are disposable. Keep the exported identity in your own secure backup.
 
 Never paste credentials into an issue, chat, Git commit, release note, or workflow file. Never add certificate files to source control. The public-tree check blocks recognizable credential patterns and private file types, but does not replace careful review of what you publish.
+
+If Apple rejects the login, generate a new app-specific password and run `npm run notarization:setup`. This updates only the two notarization login secrets, retaining the signing identity. Both setup modes check authentication with Apple's notarization service before updating GitHub. A failed login check leaves existing GitHub secrets unchanged.
+
+Tagged macOS builds notarize/staple the application through Tauri, then separately notarize/staple the signed DMG that users actually download. The pipeline checks Gatekeeper acceptance of both before publishing.
 
 Windows signing is intentionally not configured. It can be added later without changing the architecture matrix or versioning convention. Unsigned Windows downloads may show a SmartScreen warning. No automatic app updater is included; users download and install a later release.

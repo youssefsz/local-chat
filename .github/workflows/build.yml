@@ -47,6 +47,7 @@ jobs:
           python tools/check_public_tree.py
           python tools/release.py check
           python tools/test_release.py
+          python tools/test_signing_setup.py
       - name: Frontend checks and production assets
         run: |
           npm run check
@@ -76,6 +77,13 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: npm run tauri build -- --ci --target "${{ matrix.target }}" --config "$RUNNER_TEMP/local-chat-signing.json"
+      - name: Notarize and verify the signed DMG download
+        if: inputs.release && runner.os == 'macOS'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: python tools/notarize_dmg.py
       - name: Build CI installer or unsigned Windows/Linux release
         if: ${{ !inputs.release || runner.os != 'macOS' }}
         run: npm run tauri build -- --ci --target "${{ matrix.target }}"

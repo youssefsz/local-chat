@@ -13,7 +13,8 @@ files=[]
 for platform in ('macos-arm64','windows-x64','linux-x64'):
     record=json.loads((assets/f'{platform}.json').read_text())
     assert record['version']==version
-    if platform=='macos-arm64': assert record['signing']=='Developer ID + notarized'
+    if platform=='macos-arm64':
+        assert record['signing']=='Developer ID + notarized' and record['disk_image_notarized']
     for name in record['files']:
         path=assets/name
         assert path.is_file() and path.parent==assets

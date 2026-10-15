@@ -56,6 +56,9 @@ def main():
         # Unsigned Windows is an explicit product decision, not a fallback from failed signing.
         signature = subprocess.check_output(['powershell', '-NoProfile', '-Command', f"(Get-AuthenticodeSignature -LiteralPath '{release / executable}').Status"], text=True).strip()
         assert signature == 'NotSigned', f'Expected unsigned Windows beta, got {signature}'
+    if args.signed_macos:
+        notarization = json.loads((output/'macos-notarization.json').read_text())
+        assert notarization['status'] == 'Accepted' and notarization['disk_image_ticket_stapled']
     names=[]
     for folder, pattern, extension in packages:
         files = list((release / 'bundle' / folder).glob(pattern))
@@ -63,7 +66,7 @@ def main():
         name = f'Local-Chat_{version}_{args.platform}{extension}'
         shutil.copy2(files[0], output/name)
         names.append(name)
-    (output / f'{args.platform}.json').write_text(json.dumps({'version':version,'target':target,'files':names,'signing':'Developer ID + notarized' if args.signed_macos else 'unsigned Windows' if args.platform=='windows-x64' else 'CI test build' if args.platform=='macos-arm64' else 'Linux package'},indent=2)+'\n')
+    (output / f'{args.platform}.json').write_text(json.dumps({'version':version,'target':target,'files':names,'disk_image_notarized':args.signed_macos,'signing':'Developer ID + notarized' if args.signed_macos else 'unsigned Windows' if args.platform=='windows-x64' else 'CI test build' if args.platform=='macos-arm64' else 'Linux package'},indent=2)+'\n')
     print('Verified and staged: '+', '.join(names))
 
 if __name__ == '__main__': main()
