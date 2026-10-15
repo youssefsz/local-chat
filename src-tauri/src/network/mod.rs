@@ -1,7 +1,7 @@
 #[cfg(target_os = "macos")]
 mod discovery;
 #[cfg(not(target_os = "macos"))]
-mod discovery_unverified;
+mod discovery_portable;
 mod tls;
 use crate::{
     domain::*,
@@ -10,7 +10,7 @@ use crate::{
 };
 use anyhow::{Context as _, Result, ensure};
 #[cfg(not(target_os = "macos"))]
-use discovery_unverified as discovery;
+use discovery_portable as discovery;
 use ed25519_dalek::Signer;
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
@@ -126,6 +126,7 @@ impl Engine {
                 if !resumed && generation==last_generation && last_probe.elapsed()<Duration::from_secs(10) && current.as_ref().is_some_and(|c|!c.is_cancelled()){continue}
                 let signal_changed=last_generation!=generation;
                 last_generation=generation;last_probe=std::time::Instant::now();
+                if signal_changed || resumed { if let Some(cancel)=current.take(){cancel.cancel();} self.peers.lock().await.clear(); self.changed(); }
                 let evidence=tokio::task::spawn_blocking(crate::platform::network_evidence).await.ok().and_then(Result::ok);
                 if evidence!=last || resumed || signal_changed || current.as_ref().is_none_or(CancellationToken::is_cancelled){
                     if let Some(cancel)=current.take(){cancel.cancel();}

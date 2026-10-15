@@ -6,3 +6,15 @@ artifacts/
 .test-data/
 __pycache__/
 src-tauri/gen/
+
+# Signing material and local environment configuration
+.env
+.env.*
+!.env.example
+*.p12
+*.pfx
+*.p8
+*.key
+*.keychain
+*.keychain-db
+release-assets/

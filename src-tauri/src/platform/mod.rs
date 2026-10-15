@@ -78,6 +78,8 @@ impl Identity {
 }
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct NetworkEvidence {
+    // Set only after the OS adapter verifies physical interface evidence.
+    physical: bool,
     pub interface: String,
     pub address: Ipv4Addr,
     pub mask: Ipv4Addr,
@@ -87,7 +89,7 @@ pub struct NetworkEvidence {
 impl NetworkEvidence {
     pub fn fingerprint(&self) -> Option<String> {
         let mac = self.gateway_mac.as_ref()?;
-        if !self.interface.starts_with("en") || self.address.is_loopback() || mac.is_empty() {
+        if !self.physical || self.address.is_loopback() || mac.is_empty() {
             return None;
         }
         let subnet = u32::from(self.address) & u32::from(self.mask);
@@ -159,10 +161,10 @@ fn gateway_hardware(interface: &str, gateway: Ipv4Addr) -> Option<String> {
 pub fn network_generation() -> u64 {
     unsafe { localchat_network_generation() }
 }
-#[cfg(not(target_os = "macos"))]
-pub fn network_generation() -> u64 {
-    0
-}
+#[cfg(any(target_os = "windows", target_os = "linux"))]
+mod portable;
+#[cfg(any(target_os = "windows", target_os = "linux"))]
+pub use portable::{bind_physical_socket, network_evidence, network_generation};
 #[cfg(target_os = "macos")]
 pub fn bind_physical_socket(socket: &tokio::net::TcpSocket, interface: &str) -> Result<()> {
     use std::os::fd::AsRawFd;
@@ -172,10 +174,6 @@ pub fn bind_physical_socket(socket: &tokio::net::TcpSocket, interface: &str) -> 
         return Err(std::io::Error::last_os_error().into());
     }
     Ok(())
-}
-#[cfg(not(target_os = "macos"))]
-pub fn bind_physical_socket(_socket: &tokio::net::TcpSocket, _interface: &str) -> Result<()> {
-    anyhow::bail!("Physical socket binding is not yet verified on this platform")
 }
 #[cfg(target_os = "macos")]
 pub fn network_evidence() -> Result<NetworkEvidence> {
@@ -204,6 +202,7 @@ pub fn network_evidence() -> Result<NetworkEvidence> {
     };
     let mac = gateway_hardware(&interface, gateway);
     Ok(NetworkEvidence {
+        physical: true,
         interface,
         address: v4.ip,
         mask: v4.netmask,
@@ -211,16 +210,12 @@ pub fn network_evidence() -> Result<NetworkEvidence> {
         gateway_mac: mac,
     })
 }
-#[cfg(not(target_os = "macos"))]
-pub fn network_evidence() -> Result<NetworkEvidence> {
-    anyhow::bail!("This platform's network context adapter has not yet been verified")
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     fn sample() -> NetworkEvidence {
         NetworkEvidence {
+            physical: true,
             interface: "en0".into(),
             address: "192.168.0.2".parse().unwrap(),
             mask: "255.255.255.0".parse().unwrap(),
@@ -240,6 +235,7 @@ mod tests {
         assert!(b.fingerprint().is_none());
         b = sample();
         b.interface = "utun0".into();
+        b.physical = false;
         assert!(b.fingerprint().is_none());
         assert!(!a.permits("10.0.0.2".parse().unwrap()));
     }

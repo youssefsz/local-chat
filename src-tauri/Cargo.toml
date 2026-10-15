@@ -1,9 +1,10 @@
 [package]
 name = "local-chat"
-version = "0.1.0"
+version = "0.1.0-beta.1"
 edition = "2024"
 rust-version = "1.93"
 default-run = "local-chat"
+license = "MIT"
 
 [lib]
 name = "local_chat"
@@ -69,3 +70,13 @@ debug = 1
 name = "local-chat-fixture"
 path = "examples/fixture.rs"
 required-features = ["test-profile"]
+
+[target.'cfg(any(target_os = "windows", target_os = "linux"))'.dependencies]
+netdev = "=0.46.3"
+mdns-sd = { version = "=0.21.5", default-features = false, features = ["async"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+socket2 = { version = "=0.6.5", features = ["all"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-sys = { version = "=0.61.2", features = ["Win32_Networking_WinSock"] }

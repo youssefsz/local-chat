@@ -1,0 +1,38 @@
+name: Toolchain and dependencies
+description: Locked Node/Rust environment and native build dependencies
+inputs:
+  target:
+    required: true
+    description: Explicit supported Rust target
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version: '24.13.0'
+        cache: npm
+    - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+      with:
+        python-version: '3.13'
+    - name: Linux system dependencies
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf libssl-dev libdbus-1-dev libsecret-1-dev
+    - name: Rust toolchain
+      shell: bash
+      run: |
+        rustup toolchain install 1.93.0 --profile minimal --component clippy --component rustfmt
+        rustup target add --toolchain 1.93.0 "${{ inputs.target }}"
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          src-tauri/target
+        key: rust-${{ runner.os }}-${{ inputs.target }}-1.93-${{ hashFiles('src-tauri/Cargo.lock') }}
+        restore-keys: rust-${{ runner.os }}-${{ inputs.target }}-1.93-
+    - name: Frontend dependencies
+      shell: bash
+      run: npm ci

@@ -1,0 +1,11 @@
+{
+  "productName": "Local Chat Dev",
+  "identifier": "app.localchat.desktop.dev",
+  "app": {
+    "windows": [{ "label": "main", "title": "Local Chat Dev", "width": 1280, "height": 800, "minWidth": 800, "minHeight": 600, "visible": false }]
+  },
+  "bundle": {
+    "active": false,
+    "macOS": { "infoPlist": "Info.test.plist", "signingIdentity": "-" }
+  }
+}

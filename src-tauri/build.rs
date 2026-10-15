@@ -10,6 +10,15 @@ fn main() {
         println!("cargo:rerun-if-changed=src/platform/bonjour.c");
         println!("cargo:rerun-if-changed=src/platform/macos.c");
     }
+    let target = std::env::var("CARGO_CFG_TARGET_OS").unwrap();
+    if target == "linux" || target == "windows" {
+        let source = format!("src/platform/{target}.c");
+        cc::Build::new().file(&source).compile("localchat_platform");
+        println!("cargo:rerun-if-changed={source}");
+        if target == "windows" {
+            println!("cargo:rustc-link-lib=iphlpapi");
+        }
+    }
     if std::env::var_os("CARGO_FEATURE_DESKTOP").is_some() {
         tauri_build::build()
     }

@@ -1,7 +1,7 @@
 {
   "name": "local-chat",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.0-beta.1",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -10,7 +10,11 @@
     "tauri": "tauri",
     "test": "cargo test --manifest-path src-tauri/Cargo.toml --no-default-features --lib",
     "format": "prettier --write src && cargo fmt --manifest-path src-tauri/Cargo.toml",
-    "lint": "npm run check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings"
+    "lint": "npm run check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings",
+    "dev:app": "tauri dev --features test-profile --config src-tauri/tauri.dev.conf.json",
+    "version:app": "python3 tools/release.py set",
+    "release:check": "python3 tools/release.py check",
+    "signing:setup": "python3 tools/configure_signing.py"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",
@@ -24,5 +28,6 @@
     "svelte-check": "4.7.6",
     "typescript": "6.0.3",
     "vite": "8.3.4"
-  }
+  },
+  "license": "MIT"
 }

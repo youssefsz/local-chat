@@ -2,7 +2,11 @@
 
 Local Chat shares text, links and code between nearby computers without an account or a separate server. Rooms are public to the current local network. History and search stay on each computer.
 
-The approved interface is preserved in `docs/reference/`. The application uses Tauri 2, Svelte 5, strict TypeScript and Rust, with SQLite/FTS5 and direct pinned-TLS peer sessions. macOS is the first supported build. Windows and Linux are **not yet verified**; their network adapters deliberately fail closed until implemented and tested.
+The approved interface is preserved in `docs/reference/`. The application uses Tauri 2, Svelte 5, strict TypeScript and Rust, with SQLite/FTS5 and direct pinned-TLS peer sessions. macOS is the first locally verified platform. CI targets Apple Silicon macOS, Windows x64, and Linux x64. Windows/Linux networking adapters are implemented; their build and physical-device verification status is recorded separately in [platform status](docs/platform-status.md).
+
+## Development and releases
+
+Use `npm run dev:app` for the isolated development copy. Pull requests and main pushes run the three-platform CI; manual CI runs provide test installers without publishing a release. Tags such as `v0.1.0-beta.1` build releases, with signed/notarized macOS and intentionally unsigned Windows. See [the full development, versioning, and signing guide](docs/releases.md).
 
 ## Run and build
 
@@ -13,7 +17,7 @@ npm ci
 npm run check
 npm test
 npm run lint
-npm run tauri dev
+npm run dev:app
 npm run tauri build
 ```
 
