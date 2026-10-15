@@ -1,24 +1,24 @@
 {
   "conclusion": "success",
-  "headSha": "e0d2414f8beefece8adfc2937b3355102bb7dbd7",
+  "headSha": "47de9a3ccbfe9578281a485e493c2bd78f4532d7",
   "jobs": [
+    {
+      "name": "installers / Windows x64 unsigned",
+      "conclusion": "success",
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709993126/job/116338712847"
+    },
     {
       "name": "installers / macOS ARM64",
       "conclusion": "success",
-      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709022396/job/116335497472"
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709993126/job/116338713390"
     },
     {
       "name": "installers / Linux x64",
       "conclusion": "success",
-      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709022396/job/116335497670"
-    },
-    {
-      "name": "installers / Windows x64 unsigned",
-      "conclusion": "success",
-      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709022396/job/116335497693"
+      "url": "https://github.com/youssefsz/local-chat/actions/runs/38709993126/job/116338713534"
     }
   ],
-  "url": "https://github.com/youssefsz/local-chat/actions/runs/38709022396",
+  "url": "https://github.com/youssefsz/local-chat/actions/runs/38709993126",
   "windows_signing": "Intentionally unsigned",
   "macos_ci_signing": "Ad-hoc CI test build; notarization is required only in the release workflow",
   "development": "npm run dev:app launched with isolated app.localchat.desktop.dev/test-profile data; frontend ready and native show timing recorded separately from production",

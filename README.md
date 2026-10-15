@@ -5,6 +5,8 @@
 
 Local Chat shares text, links and code between nearby computers without an account or a separate server. Rooms are public to the current local network. History and search stay on each computer.
 
+Download [Local Chat 0.1.0-beta.3](https://github.com/youssefsz/local-chat/releases/tag/v0.1.0-beta.3) for Apple Silicon macOS, Windows x64, or Linux x64. The Mac app and DMG are Developer ID signed and notarized. Windows is intentionally unsigned and may show a SmartScreen warning. Linux downloads are AppImage and Debian packages.
+
 The approved interface is preserved in `docs/reference/`. The application uses Tauri 2, Svelte 5, strict TypeScript and Rust, with SQLite/FTS5 and direct pinned-TLS peer sessions. macOS is the first locally verified platform. CI targets Apple Silicon macOS, Windows x64, and Linux x64. Windows/Linux networking adapters are implemented; their build and physical-device verification status is recorded separately in [platform status](docs/platform-status.md).
 
 ## Development and releases
@@ -60,7 +62,7 @@ See [architecture](docs/architecture.md), [protocol](docs/protocol.md), [network
 
 ## Initial local handoff
 
-The tested Apple Silicon app and DMG are in `artifacts/`; the installed copy is in the user's Applications directory. The handoff artifacts use Developer ID signing and are not notarized. The default build uses ad-hoc signing; see [packaging](docs/packaging.md) for the distribution override and bundle verification command.
+The original prototype app and DMG remain in `artifacts/`. Those historical artifacts use Developer ID signing and are not notarized. The installed copy now uses the published, notarized beta.3. The default local build uses ad-hoc signing; tagged GitHub releases use Developer ID signing and notarization. See [packaging](docs/packaging.md) for verification details.
 
 Automated checks pass, including actual Bonjour/TLS process groups of 2, 5 and 20. Final installed-app communication and exact clipboard/draft behavior were exercised on this Mac. Search p95 was 59.75 ms on 100,000 synthetic messages. With one connected peer, the final release averaged 0.066% CPU and 168.63 MiB additive RSS over 30.44 seconds. Launch samples ranged from 494 ms to 7.62 seconds, with the slow run dominated by Keychain lookup.
 
