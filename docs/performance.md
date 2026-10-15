@@ -44,3 +44,9 @@ The final Developer ID signed release, opened from Finder with warm OS and Keych
 ## Bounds and implementation
 
 The frontend renders at most 160 messages, loads history in 80-message pages, and limits search to 50 results. Outgoing change capacity is 256, event batches are at most 8, and encoded frames are at most 1 MiB. Oversized encoded batches split into individual bounded event frames. Matching-summary digests are cached until eligible event membership changes. Presence updates do not reload conversation pages. Historical import emits one history refresh per batch and no catch-up notifications. No timer runs per message.
+
+## Startup loading update
+
+Secure identity initialization now runs off the native event loop. During a dedicated 12-second injected delay, the dark loading window showed at 633 ms and the light loading window at 454 ms from Rust `run()`. The local UI became ready at 12,278.79 ms and 12,197.66 ms respectively. The injected delay demonstrates responsiveness while initialization waits; it does not measure Keychain latency. The same window retained its dimensions on completion.
+
+With delay injection disabled, the dedicated System launch was ready at 356.75 ms and showed at 358 ms. The final installed signed production release, opened from Finder, was ready at 467.32 ms and showed at 471 ms. Both recorded `startup_loading_shown=false`. The loading threshold is 180 ms after frontend mount, with no minimum display duration. Native show-call timing is not compositor first paint, and these single warm samples do not establish a percentile or eliminate OS credential latency. The historical measurements above remain valid for the previous synchronous setup. See `docs/evidence/startup-verification.json` for the new trace and test boundaries.

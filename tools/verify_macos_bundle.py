@@ -20,7 +20,7 @@ programs = sorted(p.name for p in (app / 'Contents/MacOS').iterdir())
 assert programs == ['local-chat'], f'Unexpected bundled programs: {programs}'
 binary = app / 'Contents/MacOS/local-chat'
 data = binary.read_bytes()
-markers = ['LOCAL_CHAT_DATA_DIR', 'LOCAL_CHAT_TEST_SERVICE', '_localchat-test._tcp', 'window.json']
+markers = ['LOCAL_CHAT_TEST_DATA', 'LOCAL_CHAT_TEST_SERVICE', '_localchat-test._tcp', 'window.json', 'startup.json', 'Dedicated test startup failure']
 for marker in markers:
     assert marker.encode() not in data, f'Test-only marker present: {marker}'
 verified = subprocess.run(['codesign', '--verify', '--deep', '--strict', '--verbose=2', str(app)], capture_output=True, text=True, check=True)

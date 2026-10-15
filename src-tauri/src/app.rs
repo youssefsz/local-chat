@@ -1,14 +1,19 @@
 use crate::{
     domain::*,
     network::{Change, Engine},
-    platform::Identity,
-    storage::Store,
 };
 use std::sync::Arc;
 use tauri::{Emitter, Manager, State};
 use tauri_plugin_notification::NotificationExt;
+mod startup;
+use startup::Startup;
 type DesktopState = Arc<Engine>;
-struct LaunchClock(std::time::Instant, std::sync::atomic::AtomicBool);
+struct LaunchClock {
+    started: std::time::Instant,
+    network_started: std::sync::atomic::AtomicBool,
+    window_shown: std::sync::atomic::AtomicBool,
+    window_visible_ms: std::sync::atomic::AtomicU64,
+}
 type Reply<T> = Result<T, String>;
 fn error(e: impl std::fmt::Display) -> String {
     e.to_string()
@@ -227,19 +232,64 @@ fn ready(
     state: State<'_, DesktopState>,
     clock: State<'_, LaunchClock>,
 ) -> Reply<()> {
-    let milliseconds = clock.0.elapsed().as_secs_f64() * 1000.;
+    let milliseconds = clock.started.elapsed().as_secs_f64() * 1000.;
     // Local measurement requested by the product brief; no message data or telemetry leaves the device.
     if let Ok(db) = state.store.try_lock() {
         let _ = db.set_meta("last_launch_ms", &milliseconds.to_string());
+        let _ = db.set_meta(
+            "startup_loading_shown",
+            if clock
+                .window_shown
+                .load(std::sync::atomic::Ordering::Acquire)
+            {
+                "true"
+            } else {
+                "false"
+            },
+        );
     }
-    window.show().map_err(error)?;
-    window.set_focus().map_err(error)?;
-    if !clock.1.swap(true, std::sync::atomic::Ordering::AcqRel) {
+    show_window(window, clock.clone())?;
+    if let Ok(db) = state.store.try_lock() {
+        let _ = db.set_meta(
+            "startup_window_visible_ms",
+            &clock
+                .window_visible_ms
+                .load(std::sync::atomic::Ordering::Acquire)
+                .to_string(),
+        );
+    }
+    if !clock
+        .network_started
+        .swap(true, std::sync::atomic::Ordering::AcqRel)
+    {
         tauri::async_runtime::spawn(state.inner().clone().run());
     }
     Ok(())
 }
+#[tauri::command]
+fn show_window(window: tauri::WebviewWindow, clock: State<'_, LaunchClock>) -> Reply<()> {
+    use std::sync::atomic::Ordering;
+    // Once revealed, completion must respect a window the user has since hidden.
+    if !clock.window_shown.swap(true, Ordering::AcqRel) {
+        if let Err(e) = window.show().and_then(|()| window.set_focus()) {
+            clock.window_shown.store(false, Ordering::Release);
+            return Err(error(e));
+        }
+        clock.window_visible_ms.store(
+            clock.started.elapsed().as_millis() as u64,
+            Ordering::Release,
+        );
+    }
+    Ok(())
+}
 fn open(app: &tauri::AppHandle) {
+    if !app.try_state::<LaunchClock>().is_some_and(|clock| {
+        clock
+            .window_shown
+            .load(std::sync::atomic::Ordering::Acquire)
+    }) {
+        return;
+    }
     if let Some(w) = app.get_webview_window("main") {
         let _ = w.show();
         let _ = w.unminimize();
@@ -271,11 +321,12 @@ pub fn run() {
             search,
             preferences,
             record_room_switch,
-            ready
+            ready,
+            show_window,
+            startup::startup_status,
+            startup::retry_startup
         ])
         .setup(move |app| {
-            let setup_enter_ms = launched.elapsed().as_secs_f64() * 1000.;
-            let test = cfg!(feature = "test-profile");
             let data = {
                 #[cfg(feature = "test-profile")]
                 {
@@ -288,7 +339,6 @@ pub fn run() {
                     app.path().app_data_dir()?
                 }
             };
-            std::fs::create_dir_all(&data)?;
             #[cfg(feature = "test-profile")]
             if let Ok(json) = std::fs::read_to_string(data.join("window.json")) {
                 #[derive(serde::Deserialize)]
@@ -306,66 +356,13 @@ pub fn run() {
                 }
             }
 
-            let identity = Identity::load(&data, test)?;
-            let identity_ready_ms = launched.elapsed().as_secs_f64() * 1000.;
-            let store = Store::open(&data.join("local-chat.sqlite3"))?;
-            let default_name = std::env::var("USER")
-                .or_else(|_| std::env::var("USERNAME"))
-                .unwrap_or_else(|_| "You".into());
-            if store.meta("profile", "")?.is_empty() {
-                store.set_meta("profile", &default_name)?;
-            }
-            store.set_meta("identity", &identity.id())?;
-            let theme = store.meta("theme", "system")?;
-            if let Some(w) = app.get_webview_window("main") {
-                w.set_theme(match theme.as_str() {
-                    "light" => Some(tauri::Theme::Light),
-                    "dark" => Some(tauri::Theme::Dark),
-                    _ => None,
-                })?;
-            }
-            store.set_meta("startup_setup_enter_ms", &setup_enter_ms.to_string())?;
-            store.set_meta("startup_identity_ready_ms", &identity_ready_ms.to_string())?;
-            let engine = Engine::new(store, identity);
-            app.manage(engine.clone());
-            app.manage(LaunchClock(
-                launched,
-                std::sync::atomic::AtomicBool::new(false),
-            ));
-            let handle = app.handle().clone();
-            let events = engine.clone();
-            tauri::async_runtime::spawn(async move {
-                let mut changes = events.changes.subscribe();
-                while let Ok(change) = changes.recv().await {
-                    if let Change::Received(event, true) = &change {
-                        let background = handle.get_webview_window("main").is_none_or(|w| {
-                            !w.is_visible().unwrap_or(false) || !w.is_focused().unwrap_or(false)
-                        });
-                        if background
-                            && let Payload::Message { room, .. } = &event.payload
-                            && events
-                                .store
-                                .lock()
-                                .await
-                                .notification_allowed(room)
-                                .unwrap_or(false)
-                        {
-                            let _ = handle
-                                .notification()
-                                .builder()
-                                .title(format!("{} in Local Chat", event.profile))
-                                .body("A new message arrived on your local network.")
-                                .show();
-                        }
-                    }
-                    let kind = if matches!(change, Change::State) {
-                        "state"
-                    } else {
-                        "messages"
-                    };
-                    let _ = handle.emit("local-chat:changed", serde_json::json!({"kind":kind}));
-                }
+            app.manage(LaunchClock {
+                started: launched,
+                network_started: std::sync::atomic::AtomicBool::new(false),
+                window_shown: std::sync::atomic::AtomicBool::new(false),
+                window_visible_ms: std::sync::atomic::AtomicU64::new(0),
             });
+            app.manage(Startup::new(data));
             let menu = tauri::menu::Menu::default(app.handle())?;
             app.set_menu(menu)?;
             let show =
@@ -383,22 +380,15 @@ pub fn run() {
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "open" => open(app),
                     "quit" => {
-                        app.state::<DesktopState>().stop.cancel();
+                        if let Some(engine) = app.try_state::<DesktopState>() {
+                            engine.stop.cancel();
+                        }
                         app.exit(0)
                     }
                     _ => {}
                 })
                 .build(app)?;
-            if let Ok(db) = engine.store.try_lock() {
-                let _ = db.set_meta(
-                    "startup_setup_end_ms",
-                    &launched
-                        .elapsed()
-                        .as_secs_f64()
-                        .mul_add(1000., 0.)
-                        .to_string(),
-                );
-            }
+            app.state::<Startup>().begin(app.handle().clone());
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -413,8 +403,46 @@ pub fn run() {
         #[cfg(target_os = "macos")]
         tauri::RunEvent::Reopen { .. } => open(app),
         tauri::RunEvent::Exit => {
-            app.state::<DesktopState>().stop.cancel();
+            if let Some(engine) = app.try_state::<DesktopState>() {
+                engine.stop.cancel();
+            }
         }
         _ => {}
+    });
+}
+
+fn watch_changes(handle: tauri::AppHandle, engine: DesktopState) {
+    let events = engine;
+    tauri::async_runtime::spawn(async move {
+        let mut changes = events.changes.subscribe();
+        while let Ok(change) = changes.recv().await {
+            if let Change::Received(event, true) = &change {
+                let background = handle.get_webview_window("main").is_none_or(|w| {
+                    !w.is_visible().unwrap_or(false) || !w.is_focused().unwrap_or(false)
+                });
+                if background
+                    && let Payload::Message { room, .. } = &event.payload
+                    && events
+                        .store
+                        .lock()
+                        .await
+                        .notification_allowed(room)
+                        .unwrap_or(false)
+                {
+                    let _ = handle
+                        .notification()
+                        .builder()
+                        .title(format!("{} in Local Chat", event.profile))
+                        .body("A new message arrived on your local network.")
+                        .show();
+                }
+            }
+            let kind = if matches!(change, Change::State) {
+                "state"
+            } else {
+                "messages"
+            };
+            let _ = handle.emit("local-chat:changed", serde_json::json!({"kind":kind}));
+        }
     });
 }

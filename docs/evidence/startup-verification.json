@@ -1,0 +1,60 @@
+{
+  "slow_dark": {
+    "last_launch_ms": "12278.786875",
+    "startup_identity_ready_ms": "12244.274917",
+    "startup_loading_shown": "true",
+    "startup_window_visible_ms": "633",
+    "launch_appearance": "dark",
+    "theme_after_preference_change": "light"
+  },
+  "slow_light_close_during_loading": {
+    "last_launch_ms": "12197.660709000002",
+    "startup_identity_ready_ms": "12171.084499999999",
+    "startup_loading_shown": "true",
+    "startup_window_visible_ms": "454",
+    "theme": "light"
+  },
+  "failure_retry": {
+    "timing_includes_manual_error_inspection": true,
+    "meta": {
+      "last_launch_ms": "26582.49825",
+      "startup_identity_ready_ms": "26556.534333",
+      "startup_loading_shown": "true",
+      "startup_window_visible_ms": "538",
+      "theme": "light"
+    },
+    "outcome": "Failure details expanded; Tab reached Try again; Return retried and restored fixture conversation."
+  },
+  "fast_system_minimum_window": {
+    "last_launch_ms": "356.747833",
+    "startup_identity_ready_ms": "201.416958",
+    "startup_loading_shown": "false",
+    "startup_window_visible_ms": "358",
+    "theme": "system"
+  },
+  "production_finder_launch": {
+    "last_launch_ms": "467.315875",
+    "startup_identity_ready_ms": "259.051583",
+    "startup_loading_shown": "false",
+    "startup_window_visible_ms": "471",
+    "theme": "system"
+  },
+  "test_configuration": {
+    "slow_delay_ms": 12000,
+    "failure_delay_ms": 2500,
+    "test_profile": "app.localchat.desktop.qa",
+    "production_test_controls_absent": true
+  },
+  "native_checks": {
+    "loading_and_ready_geometry": "1280\u00d7720 content area unchanged, 2560\u00d71440 native captures before and after",
+    "minimum_window": "800\u00d7600 loading and direct workspace inspected",
+    "keyboard_retry": "Pass, details expanded, Tab to Try again, Return restored conversation",
+    "close_during_loading": "Closed during injected delay, then Finder reopened initialized conversation",
+    "quit_during_loading": "Pass, native Quit before engine initialization exited process",
+    "production_discovery": "Installed signed release connected to isolated Verification peer, then peer stopped",
+    "prior_data": "Existing rooms and messages visible after app replacement",
+    "flicker_evidence_limit": "Correct themed loading and ready captures inspected; no high-frame-rate first-paint recording",
+    "packaging": "Signed app, installed copy and mounted DMG binary identical; production test-only markers absent",
+    "notarization": "Skipped; no notarization credentials available"
+  }
+}

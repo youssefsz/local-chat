@@ -1,0 +1,20 @@
+{
+  "bundle_identifier": "app.localchat.desktop",
+  "version": "0.1.0",
+  "executables": [
+    "local-chat"
+  ],
+  "test_only_markers_absent": [
+    "LOCAL_CHAT_TEST_DATA",
+    "LOCAL_CHAT_TEST_SERVICE",
+    "_localchat-test._tcp",
+    "window.json",
+    "startup.json",
+    "Dedicated test startup failure"
+  ],
+  "binary_sha256": "07581aea42809bfebce0ac787fe24753349c16acdac5e207a83de28e882ef2a0",
+  "architecture": "/Volumes/Local Chat/Local Chat.app/Contents/MacOS/local-chat: Mach-O 64-bit executable arm64",
+  "signature_verification": "/Volumes/Local Chat/Local Chat.app: valid on disk\n/Volumes/Local Chat/Local Chat.app: satisfies its Designated Requirement",
+  "signature": "Executable=/Volumes/Local Chat/Local Chat.app/Contents/MacOS/local-chat\nIdentifier=app.localchat.desktop\nFormat=app bundle with Mach-O thin (arm64)\nCodeDirectory v=20500 size=24449 flags=0x10000(runtime) hashes=757+3 location=embedded\nVersionPlatform=1\nVersionMin=786432\nVersionSDK=1769472\nHash type=sha256 size=32\nCandidateCDHash sha256=18ac3ea9b2a56b856a6be571f512d88c41f347e1\nCandidateCDHashFull sha256=18ac3ea9b2a56b856a6be571f512d88c41f347e187b9ea40249ec4ef02f3e48b\nHash choices=sha256\nCMSDigest=18ac3ea9b2a56b856a6be571f512d88c41f347e187b9ea40249ec4ef02f3e48b\nCMSDigestType=2\nExecutable Segment base=0\nExecutable Segment limit=10010624\nExecutable Segment flags=0x1\nPage size=16384\nCDHash=18ac3ea9b2a56b856a6be571f512d88c41f347e1\nSignature size=9046\nAuthority=Developer ID Application: Youssef Dhibi (5S4ZT4SRV9)\nAuthority=Developer ID Certification Authority\nAuthority=Apple Root CA\nTimestamp=15/10/2026 at 8:39:45\u202fAM\nInfo.plist entries=16\nTeamIdentifier=5S4ZT4SRV9\nRuntime Version=27.0.0\nSealed Resources version=2 rules=13 files=1\nInternal requirements count=1 size=184\nTotal signatures=1\nChosen signature=1",
+  "notarization": "Not assessed by this script. Inspect the build log and stapled ticket separately."
+}

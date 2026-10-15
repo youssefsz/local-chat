@@ -1822,13 +1822,69 @@ body {
   justify-content: space-between;
   gap: 16px;
 }
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
+.app {
+  position: relative;
+}
+.boot-hidden {
+  visibility: hidden;
+}
+.startup-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 32px;
+  background: var(--surface);
   color: var(--secondary);
   font-size: 13px;
+}
+.startup-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.startup-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--line);
+  border-top-color: var(--secondary);
+  border-radius: 50%;
+  animation: startup-spin 800ms linear infinite;
+}
+@keyframes startup-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.startup-error {
+  max-width: 390px;
+  width: 100%;
+}
+.startup-error h1 {
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 650;
+  margin: 0 0 12px;
+}
+.startup-error p {
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+.startup-error details {
+  margin-bottom: 24px;
+  overflow-wrap: anywhere;
+}
+.startup-error summary {
+  cursor: pointer;
+  width: fit-content;
+}
+.startup-error details p {
+  margin: 12px 0 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .startup-spinner {
+    animation: none;
+  }
 }
 .code-input {
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace !important;

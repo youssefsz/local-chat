@@ -9,11 +9,19 @@
   import { api, desktop } from './lib/desktop/api';
   import type {
     Snapshot,
+    StartupSnapshot,
     Room,
     Message,
     SearchResult,
     Theme,
   } from './lib/desktop/api';
+  let boot = $state<'opening' | 'ready' | 'failed'>('opening');
+  let bootError = $state('');
+  let startupTheme: Theme | null = null;
+  let preparing = false;
+  let revealTimer: ReturnType<typeof setTimeout>;
+  let cleanChanges: (() => void) | undefined;
+  let delayed = false;
   let appState = $state<Snapshot | null>(null);
   let context = $state('');
   let active = $state('general');
@@ -181,6 +189,7 @@
       if (atBottom) await markRead();
       void api.recordRoomSwitch(performance.now() - started).catch(fail);
     } catch (e) {
+      if (boot === 'opening') throw e;
       fail(e);
     } finally {
       if (version === selectionVersion) loading = false;
@@ -500,6 +509,7 @@
       menu = false;
   }
   function keys(e: KeyboardEvent) {
+    if (boot !== 'ready') return;
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
       e.preventDefault();
       if (searchDialog.open) searchDialog.close();
@@ -534,20 +544,101 @@
     )
       e.target.close();
   }
-  onMount(() => {
-    if (!desktop) {
-      error =
-        'Open Local Chat as a desktop application. Local network and saved history run in the desktop app.';
+  async function revealLoading() {
+    if (!delayed || startupTheme === null || boot === 'ready') return;
+    await tick();
+    await api.showWindow();
+  }
+  async function finishStartup(status: StartupSnapshot) {
+    if (boot === 'ready' || preparing) return;
+    if (status.theme !== null) {
+      startupTheme = status.theme;
+      await applyTheme(status.theme);
+    }
+    if (status.status === 'failed') {
+      bootError = status.message;
+      boot = 'failed';
+      delayed = true;
+      await revealLoading();
       return;
     }
-    let clean: (() => void) | undefined;
+    if (status.status === 'loading') {
+      await revealLoading();
+      return;
+    }
+    preparing = true;
+    try {
+      appState = await api.snapshot();
+      await applyTheme(appState.theme);
+      if (appState.context) await selectRoom('general', appState.context);
+      cleanChanges ??= await listen<{ kind: 'state' | 'messages' }>(
+        'local-chat:changed',
+        (event) => {
+          refreshMessages ||= event.payload.kind === 'messages';
+          if (document.hidden) {
+            hiddenPending = true;
+            return;
+          }
+          clearTimeout(refreshTimer);
+          refreshTimer = setTimeout(() => {
+            const readMessages = refreshMessages;
+            refreshMessages = false;
+            void refresh(readMessages);
+          }, 60);
+        },
+      );
+      boot = 'ready';
+      clearTimeout(revealTimer);
+      await tick();
+      await api.ready();
+    } catch (e) {
+      bootError = String(e);
+      boot = 'failed';
+      delayed = true;
+      await revealLoading();
+    } finally {
+      preparing = false;
+    }
+  }
+  // Serialize status events and the initial query; ignore stale loading after ready.
+  let startupQueue: Promise<void> = Promise.resolve();
+  function receiveStartup(status: StartupSnapshot) {
+    startupQueue = startupQueue
+      .then(() => finishStartup(status))
+      .catch((e: unknown) => {
+        bootError = String(e);
+        boot = 'failed';
+      });
+    return startupQueue;
+  }
+  async function retryStartup() {
+    if (boot !== 'failed') return;
+    boot = 'opening';
+    bootError = '';
+    try {
+      await api.retryStartup();
+      await receiveStartup(await api.startup());
+    } catch (e) {
+      bootError = String(e);
+      boot = 'failed';
+    }
+  }
+  onMount(() => {
+    if (!desktop) {
+      bootError =
+        'Open Local Chat as a desktop application. Local network and saved history run in the desktop app.';
+      boot = 'failed';
+      return;
+    }
+    let cleanStartup: (() => void) | undefined;
     const media = matchMedia('(prefers-color-scheme:dark)');
     const changeTheme = () => {
-      if (appState?.theme === 'system') void applyTheme('system');
+      if ((appState?.theme ?? startupTheme) === 'system')
+        void applyTheme('system');
     };
     media.addEventListener('change', changeTheme);
     const visibilityChanged = () => {
-      if (!document.hidden && hiddenPending) {
+      if (boot === 'ready' && !document.hidden && hiddenPending) {
         hiddenPending = false;
         const readMessages = refreshMessages;
         refreshMessages = false;
@@ -555,38 +646,35 @@
       }
     };
     document.addEventListener('visibilitychange', visibilityChanged);
+    revealTimer = setTimeout(() => {
+      delayed = true;
+      void revealLoading().catch(fail);
+    }, 180);
     void (async () => {
       try {
-        appState = await api.snapshot();
-        await applyTheme(appState.theme);
-        if (appState.context) await selectRoom('general', appState.context);
-        clean = await listen<{ kind: 'state' | 'messages' }>(
-          'local-chat:changed',
+        cleanStartup = await listen<StartupSnapshot>(
+          'local-chat:startup',
           (event) => {
-            refreshMessages ||= event.payload.kind === 'messages';
-            if (document.hidden) {
-              hiddenPending = true;
-              return;
-            }
-            clearTimeout(refreshTimer);
-            refreshTimer = setTimeout(() => {
-              const readMessages = refreshMessages;
-              refreshMessages = false;
-              void refresh(readMessages);
-            }, 60);
+            void receiveStartup(event.payload);
           },
         );
-        await refresh();
-        await api.ready();
+        await receiveStartup(await api.startup());
       } catch (e) {
-        fail(e);
-        await api.ready();
+        // The bridge itself failed. Retain a recoverable local screen.
+        startupTheme ??= 'system';
+        await applyTheme(startupTheme);
+        bootError = String(e);
+        boot = 'failed';
+        delayed = true;
+        await revealLoading();
       }
     })();
     return () => {
-      clean?.();
+      cleanStartup?.();
+      cleanChanges?.();
       media.removeEventListener('change', changeTheme);
       document.removeEventListener('visibilitychange', visibilityChanged);
+      clearTimeout(revealTimer);
       clearTimeout(copyTimer);
       clearTimeout(toastTimer);
       clearTimeout(refreshTimer);
@@ -599,7 +687,7 @@
 <svelte:window onkeydown={keys} onclick={dismissMenu} />
 <Symbols />
 <div class="app">
-  {#if error}<div class="error-banner" role="alert">
+  {#if error && boot === 'ready'}<div class="error-banner" role="alert">
       <span>{error}</span><button
         class="icon-button"
         aria-label="Dismiss error"
@@ -607,7 +695,11 @@
       >
     </div>{/if}
   {#if appState}
-    <div class="shell">
+    <div
+      class="shell"
+      class:boot-hidden={boot !== 'ready'}
+      inert={boot !== 'ready'}
+    >
       <aside class="sidebar" aria-label="Rooms and people">
         <div class="brand">
           <span class="brand-mark"><Icon name="message" /></span>Local Chat
@@ -978,9 +1070,31 @@
           </p>
         </aside>{/if}
     </div>
-  {:else}<div class="loading">
-      {desktop ? 'Opening Local Chat…' : 'Local Chat · Desktop application'}
-    </div>{/if}
+  {/if}
+  {#if boot !== 'ready'}
+    <div class="startup-screen">
+      {#if boot === 'failed'}
+        <section class="startup-error" aria-labelledby="startup-title">
+          <h1 id="startup-title">Local Chat couldn’t open</h1>
+          <p>
+            Check access to your login keychain and app data, then try again.
+          </p>
+          <details>
+            <summary>Show details</summary>
+            <p>{bootError}</p>
+          </details>
+          {#if desktop}<button class="button primary" onclick={retryStartup}
+              >Try again</button
+            >{/if}
+        </section>
+      {:else}
+        <div class="startup-status" role="status">
+          <span class="startup-spinner" aria-hidden="true"></span>
+          <span>Opening Local Chat…</span>
+        </div>
+      {/if}
+    </div>
+  {/if}
 </div>
 <dialog
   bind:this={searchDialog}

@@ -1,0 +1,13 @@
+
+> local-chat@0.1.0 lint
+> npm run check && cargo clippy --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
+
+
+> local-chat@0.1.0 check
+> svelte-check --tsconfig ./tsconfig.json
+
+Loading svelte-check in workspace: /Users/youssefsz/Desktop-apps/local-chat
+Getting Svelte diagnostics...
+
+svelte-check found 0 errors and 0 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s

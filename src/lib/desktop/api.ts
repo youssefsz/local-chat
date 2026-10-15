@@ -32,6 +32,11 @@ export interface Peer {
   status: 'connected' | 'reconnecting' | 'unavailable';
 }
 export type Theme = 'system' | 'light' | 'dark';
+export type StartupSnapshot = { theme: Theme | null } & (
+  | { status: 'loading' }
+  | { status: 'ready' }
+  | { status: 'failed'; message: string }
+);
 export interface Snapshot {
   identity: string;
   profile: string;
@@ -57,6 +62,9 @@ export interface SearchResult {
 }
 export const desktop = isTauri();
 export const api = {
+  startup: () => invoke<StartupSnapshot>('startup_status'),
+  retryStartup: () => invoke<void>('retry_startup'),
+  showWindow: () => invoke<void>('show_window'),
   snapshot: () => invoke<Snapshot>('snapshot'),
   rooms: (context: string) => invoke<Room[]>('rooms', { context }),
   messages: (

@@ -58,7 +58,7 @@ npm run tauri build
 | Receive while reading old history | Pass, native view stayed in older history and showed New messages; activating it displayed the newly received event |
 | Load-older anchor and selection during a burst | Implemented; dedicated native burst/selection repetition pending |
 
-The dedicated `Local Chat Test.app` uses `app.localchat.desktop.qa`, isolated credentials and synthetic signed fixture content. It is used for window geometry and theme checks only and is excluded from the deliverables. Production has no test profile switch or control endpoint. Test helper programs are Cargo examples, so Tauri does not bundle them as app executables.
+The dedicated `Local Chat Test.app` uses `app.localchat.desktop.qa`, isolated credentials and synthetic signed fixture content. It is used for window geometry, theme, and controlled startup delay/failure checks and is excluded from the deliverables. Production has no test profile switch or control endpoint. Test helper programs are Cargo examples, so Tauri does not bundle them as app executables.
 
 ## Physical network checklist
 
@@ -76,3 +76,15 @@ One Mac is available. None of these pending checks is satisfied by running twent
 - [ ] Visually verify native notification banners, room mute, global disable and no catch-up flood.
 
 Windows and Linux have separate pending checklists in platform-status.md. Their adapters currently fail closed. Neither platform is represented as working or tested.
+
+## Startup loading update, 15 October 2026
+
+The packaged dedicated native build was exercised with a 12,000 ms initialization delay after reading the saved appearance. Light and Dark loading screens used the correct native title bar and content colors. Both completed into the real fixture conversation at the same 1280×720 size. Before/after native captures are 2560×1440 pixels. System loading and direct startup were also inspected at the 800×600 minimum size. Incomplete conversation controls were absent from the loading accessibility tree.
+
+A controlled first-attempt failure replaced the spinner with an explanation, expandable details, and Try again. Tab reached the retry button; Return retried and restored the conversation. Closing during the injected delay followed by Finder reopen restored the initialized conversation. Native Quit during another delay exited before the engine existed. The test configuration was returned to zero delay with failure injection disabled. These controls compile only into `test-profile` builds.
+
+The fast dedicated launch measured 356.75 ms to frontend-ready and skipped the loader. The final installed Developer ID signed release was opened from Finder and measured 467.32 ms to frontend-ready, also skipping the loader. Existing rooms and messages remained visible, and discovery connected to the isolated verification peer. No new production messages were sent during this check. The peer was then stopped. These are individual warm samples on this Mac, not latency percentiles or a high-frame-rate first-paint recording.
+
+`npm test` passed all 12 existing backend tests. Strict Svelte/TypeScript checks and Clippy passed with zero warnings. The final app and DMG were rebuilt, the installed binary matched the mounted DMG, and signature verification passed. The bundle contained only the production executable and none of the isolated data, service, window, or startup test markers. Notarization was skipped because no notarization credentials were available. Raw results are in `docs/evidence/startup-*`; screenshots are in `docs/screenshots/startup-*`. Physical-network and other pending checks above remain pending.
+
+To reproduce controlled startup checks, build the dedicated app with `npm run tauri build -- --ci --features test-profile --config src-tauri/tauri.test.conf.json --bundles app`. In its isolated `test-profile` data directory, create `startup.json` containing `{"delay_ms":12000,"fail_once":false}`. Use `fail_once:true` to exercise recovery, then restore `{"delay_ms":0,"fail_once":false}`. Production builds neither read this file nor expose these controls.

@@ -245,6 +245,10 @@ Explicit HTTP/HTTPS URLs render as clickable text and open through the native br
 
 Search, room creation, and settings use compact dialogs with consistent fields and action placement. Settings preserve System as the default and as a stored preference; System follows operating-system appearance changes. Search and navigation do not have entry animation. Icon and composer state transitions use 120ms. Toast opacity uses 140ms and its small upward movement uses 180ms with the source easing curve. Reduced motion removes transitions, animations, and button movement while retaining textual feedback.
 
+### Startup
+
+The native window keeps its normal size throughout opening. Apply the saved Light, Dark, or System appearance before revealing any content. When local initialization takes more than 180 ms after the interface mounts, center an 18px indeterminate spinner beside “Opening Local Chat…” on the existing `surface`, using `secondary` text at 13px. Fast initialization reveals the workspace directly. There is no artificial minimum duration or startup transition. Reduced motion leaves a static indicator with the same status text. A failed startup replaces the status with a compact explanation, optional error details, and the existing primary “Try again” button. Keep incomplete workspace controls hidden and inert until ready.
+
 ## Do's and Don'ts
 
 ### Do:
