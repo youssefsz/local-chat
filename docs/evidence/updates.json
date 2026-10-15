@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-15",
+  "version": "0.1.0-beta.6",
+  "native_qa": {
+    "platform": "macOS ARM64",
+    "isolated": true,
+    "base": "updater-enabled QA build with beta.5 version override",
+    "candidate": "0.1.0-beta.6",
+    "current": true,
+    "unavailable_recovers": true,
+    "invalid_signature_rejected": true,
+    "native_menu": true,
+    "unsaved_settings_preserved": true,
+    "download_progress": true,
+    "later": true,
+    "ready_survives_quit_and_server_failure": true,
+    "install_restart": true,
+    "installed_binary_matches_candidate": true,
+    "events_unchanged": 9,
+    "rooms_unchanged": 4,
+    "drafts_unchanged": 1,
+    "exact_multiline_tab_trailing_spaces_draft_preserved": true,
+    "screenshots": [
+      "../screenshots/update-current-dark-800.jpg",
+      "../screenshots/update-available-light-1280.jpg"
+    ]
+  },
+  "automated": {
+    "mac_backend_tests": 17,
+    "signature_checks": [
+      "valid",
+      "wrong key",
+      "wrong version",
+      "tampered payload"
+    ],
+    "update_contract_tests": 4,
+    "release_contract_tests": 4,
+    "signing_setup_tests": 2,
+    "svelte_check": "pass, zero warnings",
+    "clippy": "pass, zero warnings",
+    "actionlint": "pass"
+  },
+  "limitations": [
+    "Windows/Linux physical update installation and restart pending",
+    "Physical router/sleep/VPN checks remain pending in platform-status.md"
+  ]
+}

@@ -21,5 +21,10 @@
     "macOS": {
       "infoPlist": "Info.test.plist"
     }
+  },
+  "plugins": {
+    "updater": {
+      "dangerousInsecureTransportProtocol": true
+    }
   }
 }

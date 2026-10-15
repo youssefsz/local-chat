@@ -838,6 +838,9 @@ mod tests {
     }
     #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
     async fn interrupted_multi_page_sync_resumes_without_original_sender() {
+        // This is a functional 600-event test, not a latency benchmark. Windows
+        // debug signature checks and durable SQLite writes exceeded 20s in CI.
+        let sync_deadline = Duration::from_secs(if cfg!(windows) { 60 } else { 20 });
         let _ = rustls::crypto::ring::default_provider().install_default();
         let (_da, a) = peer();
         let (_db, b) = peer();
@@ -868,7 +871,7 @@ mod tests {
         }
         let cancel = CancellationToken::new();
         let tasks = connect(a.clone(), b.clone(), cancel.clone()).await;
-        timeout(Duration::from_secs(20), async {
+        timeout(sync_deadline, async {
             loop {
                 if a.store.lock().await.digest().unwrap() == b.store.lock().await.digest().unwrap()
                 {
@@ -887,7 +890,7 @@ mod tests {
         let (_dc, c) = peer();
         let cancel = CancellationToken::new();
         let tasks = connect(b.clone(), c.clone(), cancel.clone()).await;
-        timeout(Duration::from_secs(20), async {
+        timeout(sync_deadline, async {
             loop {
                 if b.store.lock().await.digest().unwrap() == c.store.lock().await.digest().unwrap()
                 {

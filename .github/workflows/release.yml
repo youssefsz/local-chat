@@ -29,6 +29,9 @@ jobs:
       release: true
     secrets: inherit
   publish:
+    concurrency:
+      group: publish-update-channels
+      cancel-in-progress: false
     needs: [validate, installers]
     runs-on: ubuntu-22.04
     permissions:

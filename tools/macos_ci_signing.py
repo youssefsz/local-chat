@@ -38,7 +38,7 @@ try:
         raise SystemExit('The imported certificate does not match APPLE_SIGNING_IDENTITY.')
     config = folder / 'local-chat-signing.json'
     import json
-    config.write_text(json.dumps({'bundle': {'macOS': {'signingIdentity': os.environ['APPLE_SIGNING_IDENTITY']}}}))
+    config.write_text(json.dumps({'bundle': {'createUpdaterArtifacts': True, 'macOS': {'signingIdentity': os.environ['APPLE_SIGNING_IDENTITY']}}}))
     print('Release signing identity imported into temporary keychain.')
 finally:
     certificate.unlink(missing_ok=True)

@@ -28,11 +28,11 @@ Release helper scripts require Python 3.11 or later and the authenticated GitHub
 Use `0.1.0-beta.1`, `0.1.0-beta.2`, then optionally `0.1.0-rc.1`. The first non-beta release is `0.1.0`. Pre-release versions do not consume `0.1.0`. Published tags and assets are never overwritten.
 
 ```sh
-npm run version:app -- 0.1.0-beta.4
+npm run version:app -- 0.1.0-beta.6
 npm run release:check
 # Commit the synchronized manifest and lockfile changes, then merge/push main.
-git tag -a v0.1.0-beta.4 -m "Local Chat 0.1.0-beta.4"
-git push origin v0.1.0-beta.4
+git tag -a v0.1.0-beta.6 -m "Local Chat 0.1.0-beta.6"
+git push origin v0.1.0-beta.6
 ```
 
 `Release` checks that the tag matches all manifests and points to a commit on main. It rebuilds and tests every target. The macOS release must be Developer ID signed and notarized; missing credentials fail the release rather than silently producing an ad-hoc package. A final job stages a draft release, uploads all four installers and SHA256SUMS, then publishes. A failed upload leaves a draft. Beta/RC tags are prereleases and do not replace the latest regular release. A regular tag publishes a regular release.
@@ -61,4 +61,15 @@ If Apple rejects the login, generate a new app-specific password and run `npm ru
 
 Tagged macOS builds notarize/staple the application through Tauri, then separately notarize/staple the signed DMG that users actually download. The pipeline checks Gatekeeper acceptance of both before publishing.
 
-Windows signing is intentionally not configured. It can be added later without changing the architecture matrix or versioning convention. Unsigned Windows downloads may show a SmartScreen warning. No automatic app updater is included; users download and install a later release.
+Windows signing is intentionally not configured. It can be added later without changing the architecture matrix or versioning convention. Unsigned Windows downloads may show a SmartScreen warning. Beta.6 adds an in-app updater. Users of beta.5 and earlier install beta.6 manually once; later versions can update through the app.
+
+
+## Updater signing and channels
+
+Run `npm run updater:setup` once from an authenticated checkout. It creates or reuses the updater identity under `~/.codex/local-chat-signing/LocalChat-Updater.key`, restricts local key access, sets the GitHub Actions secret `TAURI_SIGNING_PRIVATE_KEY`, and writes only the public key to `src-tauri/updater.pub` and configuration. It rejects a mismatched existing identity before changing CI secrets. The committed key must match configuration; release checks enforce the signature/version/HTTPS policy. Keep a secure backup of the private key outside Git. Never rotate it accidentally: installed apps trust the embedded public key.
+
+Every tagged release generates the updater archive or reuses the platform installer, plus a `.sig` file. Windows remains Authenticode-unsigned; updater signatures still authenticate its package. CI uses `local-chat-update-verify` with the same signature library as Tauri to reject wrong keys, modified packages and version substitution. Signing secrets are absent from ordinary CI.
+
+The publisher uploads `update.json`, signatures, packages and SHA256SUMS, publishes the complete release, and then updates the separate `updates` branch. Applications read `https://raw.githubusercontent.com/youssefsz/local-chat/updates/beta.json` or `stable.json`. Version tags remain immutable. GitHub's ordinary latest-release URL is not used because prereleases must be delivered on the beta channel. Stable releases update both channels when newer. The publisher checks versions so delayed jobs cannot replace a newer feed, and uses a serialized publication group. Public feeds contain release metadata only.
+
+Check `Check for Updates…` in the app menu or Settings. Downloads stay staged until the user chooses Restart to update. A completed download is retained across Quit and verified again on the next launch. Linux AppImage updates require a writable installation; Debian users follow the package download path. Actual installation/restart on Windows and Linux desktops remains a separate manual check.

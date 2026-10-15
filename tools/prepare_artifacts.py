@@ -4,6 +4,8 @@ import argparse
 import json
 import shutil
 import struct
+import tarfile
+import tempfile
 import subprocess
 from pathlib import Path
 from release import ROOT, check
@@ -13,7 +15,7 @@ TARGETS = {
     'windows-x64': ('x86_64-pc-windows-msvc', 'local-chat.exe', [('nsis', '*-setup.exe', '.exe')]),
     'linux-x64': ('x86_64-unknown-linux-gnu', 'local-chat', [('appimage', '*.AppImage', '.AppImage'), ('deb', '*.deb', '.deb')]),
 }
-MARKERS = (b'LOCAL_CHAT_TEST_DATA', b'LOCAL_CHAT_TEST_SERVICE', b'_localchat-test._tcp', b'startup.json', b'window.json')
+MARKERS = (b'LOCAL_CHAT_TEST_DATA', b'LOCAL_CHAT_TEST_SERVICE', b'_localchat-test._tcp', b'startup.json', b'window.json', b'update-test.json')
 
 def verify_architecture(data, platform):
     if platform == 'macos-arm64':
@@ -30,6 +32,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('platform', choices=TARGETS)
     parser.add_argument('--signed-macos', action='store_true')
+    parser.add_argument('--updater', action='store_true')
     parser.add_argument('--clean', action='store_true', help='Remove only generated bundle output before rebuilding from a cache')
     args = parser.parse_args()
     version = check()
@@ -60,13 +63,35 @@ def main():
         notarization = json.loads((output/'macos-notarization.json').read_text())
         assert notarization['status'] == 'Accepted' and notarization['disk_image_ticket_stapled']
     names=[]
+    updater=None
     for folder, pattern, extension in packages:
         files = list((release / 'bundle' / folder).glob(pattern))
         assert len(files) == 1, f'Expected one {folder} installer, found {len(files)}'
         name = f'Local-Chat_{version}_{args.platform}{extension}'
         shutil.copy2(files[0], output/name)
         names.append(name)
-    (output / f'{args.platform}.json').write_text(json.dumps({'version':version,'target':target,'files':names,'disk_image_notarized':args.signed_macos,'signing':'Developer ID + notarized' if args.signed_macos else 'unsigned Windows' if args.platform=='windows-x64' else 'CI test build' if args.platform=='macos-arm64' else 'Linux package'},indent=2)+'\n')
+        if args.updater and folder in ('nsis','appimage'):
+            signature=Path(str(files[0])+'.sig')
+            assert signature.is_file(), 'Missing updater signature'
+            subprocess.run(['cargo','run','--quiet','--locked','--manifest-path',str(ROOT/'src-tauri/Cargo.toml'),'--no-default-features','--features','release-tools','--example','local-chat-update-verify','--',str(ROOT/'src-tauri/updater.pub'),str(signature),str(files[0]),version],check=True)
+            shutil.copy2(signature,output/(name+'.sig'));names.append(name+'.sig')
+            updater={'file':name,'signature':name+'.sig'}
+    if args.updater and args.platform=='macos-arm64':
+        packages=list((release/'bundle/macos').glob('*.app.tar.gz'))
+        assert len(packages)==1,'Expected exactly one macOS updater archive'
+        package=packages[0];signature=Path(str(package)+'.sig');assert signature.is_file()
+        if args.signed_macos:
+            with tempfile.TemporaryDirectory(prefix='local-chat-update-archive-') as folder:
+                with tarfile.open(package) as archive: archive.extractall(folder,filter='data')
+                archived=list(Path(folder).glob('*.app'))
+                assert len(archived)==1,'Expected one application in updater archive'
+                subprocess.run(['xcrun','stapler','validate',str(archived[0])],check=True)
+                subprocess.run(['spctl','--assess','--type','execute','--verbose=2',str(archived[0])],check=True)
+
+        subprocess.run(['cargo','run','--quiet','--locked','--manifest-path',str(ROOT/'src-tauri/Cargo.toml'),'--no-default-features','--features','release-tools','--example','local-chat-update-verify','--',str(ROOT/'src-tauri/updater.pub'),str(signature),str(package),version],check=True)
+        name=f'Local-Chat_{version}_{args.platform}.app.tar.gz'
+        shutil.copy2(package,output/name);shutil.copy2(signature,output/(name+'.sig'));names.extend([name,name+'.sig']);updater={'file':name,'signature':name+'.sig'}
+    (output / f'{args.platform}.json').write_text(json.dumps({'version':version,'target':target,'files':names,'updater':updater,'disk_image_notarized':args.signed_macos,'signing':'Developer ID + notarized' if args.signed_macos else 'unsigned Windows' if args.platform=='windows-x64' else 'CI test build' if args.platform=='macos-arm64' else 'Linux package'},indent=2)+'\n')
     print('Verified and staged: '+', '.join(names))
 
 if __name__ == '__main__': main()

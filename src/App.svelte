@@ -5,6 +5,7 @@
   import { invoke } from '@tauri-apps/api/core';
   import Icon from './components/Icon.svelte';
   import Symbols from './components/Symbols.svelte';
+  import Updates from './components/Updates.svelte';
   import MessageView from './components/MessageView.svelte';
   import { api, desktop } from './lib/desktop/api';
   import type {
@@ -14,9 +15,63 @@
     Message,
     SearchResult,
     Theme,
+    UpdateSnapshot,
+    UpdateChannel,
   } from './lib/desktop/api';
   let boot = $state<'opening' | 'ready' | 'failed'>('opening');
   let bootError = $state('');
+  let updates = $state<UpdateSnapshot | null>(null);
+  let updateError = $state('');
+  let updateDialog: HTMLDialogElement;
+  let returnToSettings = false;
+  let cleanUpdates: (() => void)[] = [];
+  let updateNotice = $derived(
+    updates &&
+      (updates.status === 'available' || updates.status === 'ready') &&
+      updates.dismissed !== updates.release.version
+      ? updates.release
+      : null,
+  );
+  async function updateAction(action: () => Promise<void>) {
+    updateError = '';
+    try {
+      await action();
+      updates = await api.updateStatus();
+    } catch (e) {
+      updateError = String(e);
+    }
+  }
+  async function openUpdates(check = false) {
+    updateError = '';
+    if (settingsDialog.open) {
+      returnToSettings = true;
+      settingsDialog.close();
+    }
+    if (!updateDialog.open) updateDialog.showModal();
+    try {
+      updates = await api.updateStatus();
+      if (check) await updateAction(api.checkUpdates);
+    } catch (e) {
+      updateError = String(e);
+    }
+  }
+  async function installUpdate() {
+    await updateAction(async () => {
+      await draftQueue;
+      if (current && room && !room.archived)
+        await api.saveDraft(context, active, content, code);
+      saveView();
+      await api.installUpdate();
+    });
+  }
+  async function laterUpdate() {
+    await updateAction(api.dismissUpdate);
+    updateDialog.close();
+  }
+  function updatePreferences(automatic: boolean, channel: UpdateChannel) {
+    void updateAction(() => api.updatePreferences(automatic, channel));
+  }
+
   let startupTheme: Theme | null = null;
   let preparing = false;
   let revealTimer: ReturnType<typeof setTimeout>;
@@ -647,6 +702,12 @@
       clearTimeout(revealTimer);
       await tick();
       await api.ready();
+      void api
+        .updateStatus()
+        .then((value) => {
+          updates = value;
+        })
+        .catch(() => {});
     } catch (e) {
       bootError = String(e);
       boot = 'failed';
@@ -704,6 +765,41 @@
       delayed = true;
       void revealLoading().catch(fail);
     }, 180);
+    let disposed = false;
+    // Update event wiring is optional and never gates local startup.
+    void (async () => {
+      try {
+        cleanUpdates.push(
+          await listen<UpdateSnapshot>('local-chat:updates', (event) => {
+            updates = event.payload;
+          }),
+        );
+        cleanUpdates.push(
+          await listen<[number, number | null]>(
+            'local-chat:update-progress',
+            (event) => {
+              if (updates?.status === 'downloading')
+                updates = {
+                  ...updates,
+                  downloaded: event.payload[0],
+                  total: event.payload[1],
+                };
+            },
+          ),
+        );
+        cleanUpdates.push(
+          await listen('local-chat:open-updates', () => {
+            if (boot === 'ready') void openUpdates(true);
+          }),
+        );
+        if (disposed) {
+          cleanUpdates.forEach((clean) => clean());
+          cleanUpdates = [];
+        }
+      } catch {
+        updateError = 'Update controls could not connect. Try checking again.';
+      }
+    })();
     void (async () => {
       try {
         cleanStartup = await listen<StartupSnapshot>(
@@ -724,7 +820,9 @@
       }
     })();
     return () => {
+      disposed = true;
       cleanStartup?.();
+      cleanUpdates.forEach((clean) => clean());
       cleanChanges?.();
       media.removeEventListener('change', changeTheme);
       document.removeEventListener('visibilitychange', visibilityChanged);
@@ -864,6 +962,18 @@
           </section>
         </div>
         <div class="sidebar-footer">
+          {#if updateNotice}<div class="update-notice">
+              <button onclick={() => openUpdates()}
+                ><span>Update available</span><small
+                  >{updateNotice.version}</small
+                ></button
+              >
+              <button
+                class="icon-button"
+                aria-label="Remind me about this update later"
+                onclick={laterUpdate}><Icon name="x" /></button
+              >
+            </div>{/if}
           <button
             class="network-card"
             class:network-connected={connected.length > 0 && !reconnecting}
@@ -1338,6 +1448,13 @@
       account is needed. Closing this window keeps Local Chat receiving. Choose
       Quit from the app menu to stop.
     </p>
+    <div class="settings-version">
+      <span>Local Chat {updates?.version ?? ''}</span><button
+        type="button"
+        class="button"
+        onclick={() => openUpdates(true)}>Check for updates…</button
+      >
+    </div>
     <div class="dialog-actions">
       <button
         class="button"
@@ -1346,6 +1463,45 @@
       ><button class="button primary" type="submit">Save changes</button>
     </div>
   </form>
+</dialog>
+<dialog
+  bind:this={updateDialog}
+  aria-labelledby="updates-title"
+  onclose={() => {
+    if (returnToSettings) {
+      returnToSettings = false;
+      settingsDialog.showModal();
+      settingsDialog
+        .querySelector<HTMLButtonElement>('.settings-version button')
+        ?.focus();
+    }
+  }}
+  oncancel={(e) => {
+    if (updates?.status === 'installing') e.preventDefault();
+  }}
+  onclick={(e) => {
+    if (updates?.status !== 'installing') backdrop(e);
+  }}
+>
+  <div class="dialog-header">
+    <h2 id="updates-title">Software updates</h2>
+    <button
+      class="icon-button"
+      aria-label="Close updates"
+      onclick={() => updateDialog.close()}
+      disabled={updates?.status === 'installing'}><Icon name="x" /></button
+    >
+  </div>
+  <Updates
+    state={updates}
+    error={updateError}
+    check={() => updateAction(api.checkUpdates)}
+    download={() => updateAction(api.downloadUpdate)}
+    install={installUpdate}
+    preferences={updatePreferences}
+    later={laterUpdate}
+    openDownload={() => updateAction(api.openUpdateDownload)}
+  />
 </dialog>
 {#if toast}<div class="toast visible" role="status">
     <Icon name="check" />{toast}

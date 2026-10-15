@@ -6,8 +6,10 @@ use std::sync::Arc;
 use tauri::{Emitter, Manager, State};
 use tauri_plugin_notification::NotificationExt;
 mod startup;
+mod updates;
 use startup::Startup;
 type DesktopState = Arc<Engine>;
+struct UpdateMenu(tauri::menu::MenuItem<tauri::Wry>);
 struct LaunchClock {
     started: std::time::Instant,
     network_started: std::sync::atomic::AtomicBool,
@@ -252,7 +254,7 @@ fn ready(
             },
         );
     }
-    show_window(window, clock.clone())?;
+    show_window(window.clone(), clock.clone())?;
     if let Ok(db) = state.store.try_lock() {
         let _ = db.set_meta(
             "startup_window_visible_ms",
@@ -267,6 +269,10 @@ fn ready(
         .swap(true, std::sync::atomic::Ordering::AcqRel)
     {
         tauri::async_runtime::spawn(state.inner().clone().run());
+        if let Some(item) = window.app_handle().try_state::<UpdateMenu>() {
+            let _ = item.0.set_enabled(true);
+        }
+        updates::start_background(window.app_handle().clone(), state.inner().clone());
     }
     Ok(())
 }
@@ -311,7 +317,15 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
+            updates::update_status,
+            updates::check_updates,
+            updates::download_update,
+            updates::install_update,
+            updates::update_preferences,
+            updates::dismiss_update,
+            updates::open_update_download,
             snapshot,
             reconnect,
             rooms,
@@ -367,8 +381,28 @@ pub fn run() {
                 window_shown: std::sync::atomic::AtomicBool::new(false),
                 window_visible_ms: std::sync::atomic::AtomicU64::new(0),
             });
+            app.manage(updates::Service::new(data.clone()));
             app.manage(Startup::new(data));
             let menu = tauri::menu::Menu::default(app.handle())?;
+            let update_item = tauri::menu::MenuItem::with_id(
+                app,
+                "check-updates",
+                "Check for Updates…",
+                false,
+                None::<&str>,
+            )?;
+            #[cfg(target_os = "macos")]
+            if let Some(first) = menu.items()?.first().and_then(|i| i.as_submenu()) {
+                first.insert(&update_item, 1)?;
+            }
+            #[cfg(not(target_os = "macos"))]
+            if let Some(help) = menu
+                .get(tauri::menu::HELP_SUBMENU_ID)
+                .and_then(|i| i.as_submenu().cloned())
+            {
+                help.append(&update_item)?;
+            }
+            app.manage(UpdateMenu(update_item));
             app.set_menu(menu)?;
             let show =
                 tauri::menu::MenuItem::with_id(app, "open", "Open Local Chat", true, None::<&str>)?;
@@ -395,6 +429,12 @@ pub fn run() {
                 .build(app)?;
             app.state::<Startup>().begin(app.handle().clone());
             Ok(())
+        })
+        .on_menu_event(|app, event| {
+            if event.id.as_ref() == "check-updates" && app.try_state::<DesktopState>().is_some() {
+                open(app);
+                let _ = app.emit("local-chat:open-updates", ());
+            }
         })
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {

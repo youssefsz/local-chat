@@ -2100,3 +2100,109 @@ body {
     flex-shrink: 0;
   }
 }
+
+/* Update controls share the existing settings and dialog vocabulary. */
+.settings-version {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 18px;
+  margin-top: 20px;
+  font-size: 11px;
+  color: var(--secondary);
+}
+.update-body {
+  padding: 0 26px 24px;
+}
+.update-installed {
+  font-size: 13px;
+  font-weight: 550;
+  margin: 0 0 20px;
+}
+.update-installed span {
+  color: var(--secondary);
+  font-weight: 400;
+}
+.update-channel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  margin-top: 16px;
+}
+.update-channel select {
+  background: var(--hover);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font: inherit;
+}
+.update-explanation {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--secondary);
+  margin: 12px 0;
+}
+.update-result {
+  font-size: 12px;
+  line-height: 1.6;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 18px;
+}
+.update-result p {
+  margin: 0 0 8px;
+}
+.update-result-title {
+  font-weight: 600;
+}
+.update-body progress {
+  width: 100%;
+  height: 6px;
+  accent-color: var(--accent);
+}
+.update-notes {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 14px;
+}
+.update-notes summary {
+  cursor: pointer;
+}
+.update-notes p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--secondary);
+  max-height: 180px;
+  overflow: auto;
+}
+.update-notice {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 10px;
+  padding: 4px 7px;
+  background: var(--accent-wash);
+  border-radius: 6px;
+  color: var(--accent);
+}
+.update-notice > button:first-child {
+  flex: 1;
+  text-align: left;
+  padding: 3px;
+  min-width: 0;
+}
+.update-notice span {
+  display: block;
+  font-size: 12px;
+  font-weight: 550;
+}
+.update-notice small {
+  display: block;
+  font-size: 11px;
+  margin-top: 3px;
+}

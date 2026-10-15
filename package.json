@@ -1,7 +1,7 @@
 {
   "name": "local-chat",
   "private": true,
-  "version": "0.1.0-beta.5",
+  "version": "0.1.0-beta.6",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -15,7 +15,8 @@
     "version:app": "python3 tools/release.py set",
     "release:check": "python3 tools/release.py check",
     "signing:setup": "python3 tools/configure_signing.py",
-    "notarization:setup": "python3 tools/configure_signing.py --notarization-only"
+    "notarization:setup": "python3 tools/configure_signing.py --notarization-only",
+    "updater:setup": "python3 tools/configure_updater.py"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

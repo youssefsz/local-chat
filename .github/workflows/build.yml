@@ -48,6 +48,7 @@ jobs:
           python tools/release.py check
           python tools/test_release.py
           python tools/test_signing_setup.py
+          python tools/test_updates.py
       - name: Frontend checks and production assets
         run: |
           npm run check
@@ -57,6 +58,8 @@ jobs:
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
           cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
           cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib
+      - name: Verify updater signature rejection
+        run: python tools/test_update_signatures.py
       - name: Clean generated installers restored from cache
         run: python tools/prepare_artifacts.py '${{ matrix.platform }}' --clean
       - name: macOS Bonjour recovery regression
@@ -72,9 +75,16 @@ jobs:
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: python tools/macos_ci_signing.py
+      - name: Require updater signing identity for releases
+        if: inputs.release
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+        run: python -c "import os; assert os.environ.get('TAURI_SIGNING_PRIVATE_KEY'), 'Configure the updater signing identity first'"
       - name: Build signed and notarized macOS release
         if: inputs.release && runner.os == 'macOS'
         env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
           APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
@@ -89,11 +99,18 @@ jobs:
         run: python tools/notarize_dmg.py
       - name: Build CI installer or unsigned Windows/Linux release
         if: ${{ !inputs.release || runner.os != 'macOS' }}
-        run: npm run tauri build -- --ci --target "${{ matrix.target }}"
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ inputs.release && secrets.TAURI_SIGNING_PRIVATE_KEY || '' }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ''
+        run: |
+          updater=()
+          if [[ '${{ inputs.release }}' == 'true' ]]; then updater=(--config '{"bundle":{"createUpdaterArtifacts":true}}'); fi
+          npm run tauri build -- --ci --target "${{ matrix.target }}" "${updater[@]}"
       - name: Verify production binary and installers
         run: |
           signed=()
           if [[ '${{ inputs.release }}' == 'true' && '${{ runner.os }}' == 'macOS' ]]; then signed=(--signed-macos); fi
+          if [[ '${{ inputs.release }}' == 'true' ]]; then signed+=(--updater); fi
           python tools/prepare_artifacts.py '${{ matrix.platform }}' "${signed[@]}"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

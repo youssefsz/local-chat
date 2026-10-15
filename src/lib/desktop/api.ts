@@ -60,8 +60,37 @@ export interface SearchResult {
   room_name: string;
   current: boolean;
 }
+export type UpdateChannel = 'stable' | 'beta';
+type UpdateRelease = { version: string; notes: string };
+export type UpdateSnapshot = {
+  version: string;
+  channel: UpdateChannel;
+  automatic: boolean;
+  last_checked: number;
+  dismissed: string;
+  in_app: boolean;
+} & (
+  | { status: 'idle' | 'checking' | 'current' | 'installing' }
+  | { status: 'available' | 'ready'; release: UpdateRelease }
+  | {
+      status: 'downloading';
+      release: UpdateRelease;
+      downloaded: number;
+      total: number | null;
+    }
+  | { status: 'failed'; message: string }
+);
+
 export const desktop = isTauri();
 export const api = {
+  updateStatus: () => invoke<UpdateSnapshot>('update_status'),
+  checkUpdates: () => invoke<void>('check_updates'),
+  downloadUpdate: () => invoke<void>('download_update'),
+  installUpdate: () => invoke<void>('install_update'),
+  updatePreferences: (automatic: boolean, channel: UpdateChannel) =>
+    invoke<void>('update_preferences', { automatic, channel }),
+  dismissUpdate: () => invoke<void>('dismiss_update'),
+  openUpdateDownload: () => invoke<void>('open_update_download'),
   startup: () => invoke<StartupSnapshot>('startup_status'),
   retryStartup: () => invoke<void>('retry_startup'),
   showWindow: () => invoke<void>('show_window'),

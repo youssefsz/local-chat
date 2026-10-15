@@ -35,6 +35,9 @@ def versions():
 def check(tag=None, on_main=False):
     values = versions()
     version = validate(values['package.json'])
+    config=json.loads((ROOT/'src-tauri/tauri.conf.json').read_text())['plugins']['updater']
+    if config['pubkey'].strip()!=(ROOT/'src-tauri/updater.pub').read_text().strip() or not config.get('requireSignedVersion') or config.get('dangerousInsecureTransportProtocol'):
+        raise ValueError('Updater identity or signature/HTTPS policy is inconsistent')
     if any(v != version for v in values.values()):
         raise ValueError(f'Version mismatch: {values}')
     if tag is not None and tag != f'v{version}':
