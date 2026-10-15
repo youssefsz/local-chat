@@ -198,6 +198,7 @@ impl Engine {
             }
             last_generation = generation;
             last_probe = std::time::Instant::now();
+            let had_network = current.is_some();
             if manual || signal_changed || resumed {
                 if let Some(network) = current.take() {
                     network.shutdown().await;
@@ -232,7 +233,10 @@ impl Engine {
                     let mut db = self.store.lock().await;
                     // A transport retry on an unchanged, continuously observed route is
                     // not a new network, even when its gateway has no hardware address.
-                    let continuous = !resumed
+                    // A failed activation leaves no running service. Observing its route
+                    // again must retry activation, never reuse the previous context.
+                    let continuous = had_network
+                        && !resumed
                         && !signal_changed
                         && last.as_ref() == Some(&e)
                         && !db.active.is_empty();

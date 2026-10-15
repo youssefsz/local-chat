@@ -7,7 +7,7 @@
   "identity_context_rooms_and_draft_preserved": true,
   "offline_catchup_without_duplicates": true,
   "scope": "Isolated processes on one physical Mac; not a multi-computer LAN certification",
-  "version": "0.1.0-beta.4",
+  "version": "0.1.0-beta.5",
   "rust_tests": 15,
   "bonjour_poll_regressions": 5,
   "baseline_failures_reproduced": [

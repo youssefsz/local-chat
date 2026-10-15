@@ -5,7 +5,7 @@
 
 Local Chat shares text, links and code between nearby computers without an account or a separate server. Rooms are public to the current local network. History and search stay on each computer.
 
-Download [Local Chat 0.1.0-beta.4](https://github.com/youssefsz/local-chat/releases/tag/v0.1.0-beta.4) for Apple Silicon macOS, Windows x64, or Linux x64. The Mac app and DMG are Developer ID signed and notarized. Windows is intentionally unsigned and may show a SmartScreen warning. Linux downloads are AppImage and Debian packages.
+Download [Local Chat 0.1.0-beta.5](https://github.com/youssefsz/local-chat/releases/tag/v0.1.0-beta.5) for Apple Silicon macOS, Windows x64, or Linux x64. The Mac app and DMG are Developer ID signed and notarized. Windows is intentionally unsigned and may show a SmartScreen warning. Linux downloads are AppImage and Debian packages.
 
 The approved interface is preserved in `docs/reference/`. The application uses Tauri 2, Svelte 5, strict TypeScript and Rust, with SQLite/FTS5 and direct pinned-TLS peer sessions. macOS is the first locally verified platform. CI targets Apple Silicon macOS, Windows x64, and Linux x64. Windows/Linux networking adapters are implemented; their build and physical-device verification status is recorded separately in [platform status](docs/platform-status.md).
 
