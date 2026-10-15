@@ -25,14 +25,14 @@ All external actions are pinned to reviewed commit SHAs. Pull-request CI receive
 
 Release helper scripts require Python 3.11 or later and the authenticated GitHub CLI. CI explicitly installs Python 3.13 in build, validation, and publication jobs.
 
-Use `0.1.0-beta.1`, `0.1.0-beta.2`, then optionally `0.1.0-rc.1`. The first non-beta release is `0.1.0`. Pre-release versions do not consume `0.1.0`. Published tags and assets are never overwritten. Prepare a version in a PR and merge it after CI passes.
+The first public stable release is `0.0.1`, following the owner's requested version reset after the `0.1.0-beta` test series. Future stable releases advance to `0.0.2`, `0.0.3`, and so on. Test a future version with `0.0.2-beta.1`, then optionally `0.0.2-rc.1`; those do not consume `0.0.2`. Published tags and assets are never overwritten. Prepare a version in a PR and merge it after CI passes.
 
 ```sh
-npm run version:app -- 0.1.0-beta.7
+npm run version:app -- 0.0.2-beta.1
 npm run release:check
 # Commit the synchronized manifest and lockfile changes, then merge/push main.
-git tag -a v0.1.0-beta.7 -m "Local Chat 0.1.0-beta.7"
-git push origin v0.1.0-beta.7
+git tag -a v0.0.2-beta.1 -m "Local Chat 0.0.2-beta.1"
+git push origin v0.0.2-beta.1
 ```
 
 `Release` checks that the tag matches all manifests and points to a commit on main. It rebuilds and tests every target. The macOS release must be Developer ID signed and notarized; missing credentials fail the release rather than silently producing an ad-hoc package. A final job creates reviewed highlights plus categorized GitHub PR notes and verified contributor credits, stages a draft, uploads installers, updater packages, signatures, update.json and SHA256SUMS, then publishes. A failed upload leaves a draft. Beta/RC tags are prereleases and do not replace the latest regular release. A regular tag publishes a regular release.
@@ -70,7 +70,7 @@ Run `npm run updater:setup` once from an authenticated checkout. It creates or r
 
 Every tagged release generates the updater archive or reuses the platform installer, plus a `.sig` file. Windows remains Authenticode-unsigned; updater signatures still authenticate its package. CI uses `local-chat-update-verify` with the same signature library as Tauri to reject wrong keys, modified packages and version substitution. Signing secrets are absent from ordinary CI.
 
-The publisher uploads `update.json`, signatures, packages and SHA256SUMS, publishes the complete release, and then updates the separate `updates` branch. Applications read `https://raw.githubusercontent.com/youssefsz/local-chat/updates/beta.json` or `stable.json`. Version tags remain immutable. GitHub's ordinary latest-release URL is not used because prereleases must be delivered on the beta channel. Stable releases update both channels when newer. The publisher checks versions so delayed jobs cannot replace a newer feed, and uses a serialized publication group. Public feeds contain release metadata only.
+The publisher uploads `update.json`, signatures, packages and SHA256SUMS, publishes the complete release, and then updates the separate `updates` branch. Applications read `https://raw.githubusercontent.com/youssefsz/local-chat/updates/beta-public.json` or `stable.json`. Version tags remain immutable. GitHub's ordinary latest-release URL is not used because prereleases must be delivered on the beta channel. Stable releases update both channels when newer. The publisher checks versions so delayed jobs cannot replace a newer feed, and uses a serialized publication group. Public feeds contain release metadata only.
 
 Check `Check for Updates…` in the app menu or Settings. Downloads stay staged until the user chooses Restart to update. A completed download is retained across Quit and verified again on the next launch. Linux AppImage updates require a writable installation; Debian users follow the package download path. Actual installation/restart on Windows and Linux desktops remains a separate manual check.
 
@@ -79,7 +79,7 @@ Check `Check for Updates…` in the app menu or Settings. Downloads stay staged 
 Write reviewed highlights in `docs/release-notes/VERSION.md`. Commit the version preparation on its branch, then preview before tagging:
 
 ```sh
-python3 tools/release_notes.py --version 0.1.0-beta.7 --commit HEAD --output artifacts/release-notes-preview.md
+python3 tools/release_notes.py --version 0.0.2-beta.1 --commit HEAD --output artifacts/release-notes-preview.md
 ```
 
 This command reads GitHub history and writes a local preview. It does not publish or edit a release. The current version's highlight file must exist.
@@ -90,3 +90,9 @@ Download links, upgrade instructions, known platform limitations, and a full com
 ## Repository maintenance
 
 Contributors use branches and PRs. Main requires the three native CI checks; the repository owner retains an administrative recovery path. Never run untrusted PR code with release secrets. Ordinary CI has read-only permissions. Private vulnerability reports use GitHub Security, linked from SECURITY.md. Generated test summaries are workflow artifacts, not committed evidence files.
+
+## Website and the first public release
+
+The website deploys independently through Cloudflare Workers Builds when `website/**` changes on main. See [website setup](../website/README.md). Download links resolve the latest published stable GitHub release without a website rebuild.
+
+The old `beta.json` feed remains intact for legacy installations. Public builds use a separate `beta-public.json` feed, so they never offer retired 0.1.0-beta test builds. Publishing 0.0.1 initializes the stable and public beta feeds and marks 0.0.1 as GitHub latest. Existing beta installations need one manual install and a change to the Stable channel. Never weaken version comparison or rewrite old published tags to handle the reset.

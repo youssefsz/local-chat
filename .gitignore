@@ -22,3 +22,7 @@ release-assets/
 # Local design tooling and generated verification output
 .impeccable/
 docs/evidence/
+
+.taste-skill/
+website/.wrangler/
+website/node_modules/

@@ -8,13 +8,14 @@
 
 <p align="center">
   <a href="https://github.com/youssefsz/local-chat/actions/workflows/ci.yml"><img src="https://github.com/youssefsz/local-chat/actions/workflows/ci.yml/badge.svg?branch=main&amp;event=push" alt="CI status"></a>
-  <a href="https://github.com/youssefsz/local-chat/releases"><img src="https://img.shields.io/github/v/release/youssefsz/local-chat?include_prereleases&amp;label=release&amp;color=a94329" alt="Latest release including beta versions"></a>
+  <a href="https://github.com/youssefsz/local-chat/releases/latest"><img src="https://img.shields.io/github/v/release/youssefsz/local-chat?label=release&amp;color=a94329" alt="Latest stable release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-367151" alt="MIT license"></a>
   <a href="docs/platform-status.md"><img src="https://img.shields.io/badge/builds-macOS%20ARM64%20%C2%B7%20Windows%20x64%20%C2%B7%20Linux%20x64-646861" alt="Build targets: macOS ARM64, Windows x64, Linux x64"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/youssefsz/local-chat/releases">Download</a> ·
+  <a href="https://local-chat.youssef.tn">Website</a> ·
+  <a href="https://local-chat.youssef.tn/download">Download</a> ·
   <a href="#get-started">Get started</a> ·
   <a href="CONTRIBUTING.md">Contribute</a> ·
   <a href="SUPPORT.md">Get help</a> ·
@@ -41,7 +42,7 @@ Local Chat connects nearby computers without an account or a separate server. Sh
 
 ## Download
 
-Local Chat is currently in beta. Choose an installer from the [release page](https://github.com/youssefsz/local-chat/releases), where each release lists changes and checksums. New release notes also credit contributors.
+Download the first public release, `0.0.1`, from the [website](https://local-chat.youssef.tn/download). Download buttons follow the latest published stable release. The [release page](https://github.com/youssefsz/local-chat/releases/latest) lists changes, checksums, and contributor credits. This is early software; keep separate copies of important information.
 
 | Platform | Architecture | Download and status |
 | --- | --- | --- |
@@ -51,7 +52,7 @@ Local Chat is currently in beta. Choose an installer from the [release page](htt
 
 CI builds and tests these targets. Physical Windows and Linux desktop, firewall, LAN, and update-installation checks remain pending. See [platform status](docs/platform-status.md).
 
-Users of beta.5 and earlier need one manual upgrade to an updater-enabled version. Later updates can be downloaded and installed from the app. Debian installations use downloaded packages.
+Earlier test builds used `0.1.0-beta` versions, which sort above `0.0.1`. Beta users need one manual installation of `0.0.1`, then must select the Stable update channel in Settings. Updater downgrade protection stays enabled. Later updates can be downloaded and installed from the app. Debian installations use downloaded packages.
 
 ## Get started
 
@@ -88,6 +89,8 @@ See [contributing](CONTRIBUTING.md) for the review workflow and [testing](docs/t
 
 ## Documentation
 
+- [Getting started](https://local-chat.youssef.tn/get-started), [release notes](https://local-chat.youssef.tn/releases), [privacy](https://local-chat.youssef.tn/privacy), and [terms](https://local-chat.youssef.tn/terms)
+- [Website development and Cloudflare deployment](website/README.md)
 - [Architecture](docs/architecture.md), [protocol](docs/protocol.md), and [network contexts](docs/network-contexts.md)
 - [Testing](docs/testing.md), [platform status](docs/platform-status.md), and [performance](docs/performance.md)
 - [Releasing](docs/releases.md) and [packaging](docs/packaging.md)

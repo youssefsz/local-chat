@@ -5,6 +5,7 @@ use crate::{
 use std::sync::Arc;
 use tauri::{Emitter, Manager, State};
 use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_opener::OpenerExt;
 mod startup;
 mod updates;
 use startup::Startup;
@@ -395,14 +396,34 @@ pub fn run() {
             if let Some(first) = menu.items()?.first().and_then(|i| i.as_submenu()) {
                 first.insert(&update_item, 1)?;
             }
-            #[cfg(not(target_os = "macos"))]
-            if let Some(help) = menu
+            let help = if let Some(help) = menu
                 .get(tauri::menu::HELP_SUBMENU_ID)
-                .and_then(|i| i.as_submenu().cloned())
+                .and_then(|item| item.as_submenu().cloned())
             {
-                help.append(&update_item)?;
-            }
+                help
+            } else {
+                let help =
+                    tauri::menu::Submenu::with_id(app, tauri::menu::HELP_SUBMENU_ID, "Help", true)?;
+                menu.append(&help)?;
+                help
+            };
+            #[cfg(not(target_os = "macos"))]
+            help.append(&update_item)?;
             app.manage(UpdateMenu(update_item));
+            for (id, label) in [
+                ("website", "Local Chat Website"),
+                ("guide", "Getting Started"),
+                ("privacy", "Privacy Policy"),
+                ("terms", "Terms of Use"),
+            ] {
+                help.append(&tauri::menu::MenuItem::with_id(
+                    app,
+                    id,
+                    label,
+                    true,
+                    None::<&str>,
+                )?)?;
+            }
             app.set_menu(menu)?;
             let show =
                 tauri::menu::MenuItem::with_id(app, "open", "Open Local Chat", true, None::<&str>)?;
@@ -431,6 +452,18 @@ pub fn run() {
             Ok(())
         })
         .on_menu_event(|app, event| {
+            let path = match event.id.as_ref() {
+                "website" => Some(""),
+                "guide" => Some("/get-started"),
+                "privacy" => Some("/privacy"),
+                "terms" => Some("/terms"),
+                _ => None,
+            };
+            if let Some(path) = path {
+                let _ = app
+                    .opener()
+                    .open_url(format!("https://local-chat.youssef.tn{path}"), None::<&str>);
+            }
             if event.id.as_ref() == "check-updates" && app.try_state::<DesktopState>().is_some() {
                 open(app);
                 let _ = app.emit("local-chat:open-updates", ());

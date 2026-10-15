@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 from publish_release import existing_state
-from update_feed import build_feed, version_key, PLATFORMS
+from update_feed import build_feed, version_key, channels_for, PLATFORMS
 
 class Updates(unittest.TestCase):
     def test_published_release_is_verified_without_overwrite(self):
@@ -19,6 +19,9 @@ class Updates(unittest.TestCase):
             with self.assertRaises(ValueError):existing_state(record,'marker',[file])
             with self.assertRaises(ValueError):existing_state(record,'other commit',[file])
     def test_channel_ordering(self):
+        self.assertEqual(channels_for('0.0.1'), ('stable', 'beta-public'))
+        self.assertEqual(channels_for('0.0.2-beta.1'), ('beta-public',))
+        self.assertNotIn('beta', channels_for('0.0.1'))
         versions=['0.1.0-beta.2','0.1.0-beta.10','0.1.0-rc.1','0.1.0','0.2.0-beta.1']
         self.assertEqual(sorted(versions,key=version_key),versions)
         with self.assertRaises(ValueError): version_key('../main')

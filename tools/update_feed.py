@@ -15,6 +15,10 @@ def version_key(version):
     stage, _, number = pre.partition('.')
     return (*map(int,core.split('.')), {'':2,'rc':1,'beta':0}[stage], int(number or 0))
 
+def channels_for(version):
+    validate(version)
+    return ('beta-public',) if '-' in version else ('stable', 'beta-public')
+
 def build_feed(version, records, assets, notes, date):
     validate(version)
     platforms = {}
@@ -58,7 +62,9 @@ def publish_channels(feed):
     if stable_sha is None:
         empty={'version':'0.0.0','notes':'No stable release has been published.','platforms':{}}
         gh(f'repos/{REPO}/contents/stable.json', {'message':'Initialize empty stable update channel','branch':'updates','content':base64.b64encode((json.dumps(empty)+'\n').encode()).decode()})
-    names=['beta'] if '-' in feed['version'] else ['stable','beta']
+    # The pre-public beta series used 0.1.0-beta versions. Keep that legacy
+    # feed intact; new public builds must never offer those retired test builds.
+    names=channels_for(feed['version'])
     for name in names:
         sha,existing=channel_file(name)
         if existing and version_key(existing['version'])>=version_key(feed['version']):

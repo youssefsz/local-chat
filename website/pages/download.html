@@ -1,0 +1,113 @@
+<!--{"title":"Download","description":"Download the latest Local Chat for Apple Silicon Mac, Windows x64, or Linux x64. Installation instructions, signing details, and verified release downloads."}-->
+<div class="page-intro">
+  <h1>Bring everyone in.</h1>
+  <p>
+    Install Local Chat on each computer, join the same network, and open the
+    app.
+  </p>
+  <p class="small" id="release-status" role="status">
+    Download the latest stable release. Free and open source.
+  </p>
+</div>
+<div class="downloads">
+  <section class="platform">
+    <img src="/assets/apple.svg" width="40" height="40" alt="" />
+    <div>
+      <h2>macOS</h2>
+      <p>Apple Silicon · M1 and later<br />macOS 12 or later</p>
+      <a class="button primary" href="/download/macos">Download for Mac</a>
+      <p class="small">Developer ID signed and notarized.</p>
+      <details>
+        <summary>How to install</summary>
+        <p>
+          Open the DMG and drag Local Chat into Applications. Open it, then
+          allow Local Network access when macOS asks.
+        </p>
+        <p>Intel Macs are not supported.</p>
+      </details>
+    </div>
+  </section>
+  <section class="platform">
+    <img src="/assets/windows.svg" width="40" height="40" alt="" />
+    <div>
+      <h2>Windows</h2>
+      <p>x64 · Intel and AMD<br />Windows 10 or later</p>
+      <a class="button primary" href="/download/windows"
+        >Download for Windows</a
+      >
+      <p class="small">Currently unsigned. SmartScreen may warn.</p>
+      <details>
+        <summary>How to install</summary>
+        <p>
+          Run the downloaded installer. Windows may show an unrecognized-app
+          warning because this release is not Authenticode signed. Check that
+          you downloaded it from this site or our GitHub repository.
+        </p>
+        <p>
+          Windows ARM is not supported. WebView2 is required; the installer can
+          download it when needed.
+        </p>
+      </details>
+    </div>
+  </section>
+  <section class="platform">
+    <img src="/assets/linux.svg" width="40" height="40" alt="" />
+    <div>
+      <h2>Linux</h2>
+      <p>x64 · Intel and AMD<br />AppImage or Debian package</p>
+      <a class="button primary" href="/download/linux">Download AppImage</a>
+      <p><a href="/download/debian">Download .deb instead</a></p>
+      <details>
+        <summary>How to install</summary>
+        <p>
+          Make the AppImage executable using your file manager, then open it.
+          Your distribution may need FUSE support. The .deb package is for
+          compatible Debian and Ubuntu systems.
+        </p>
+        <p>
+          Linux ARM is not supported. A current WebKitGTK 4.1 runtime is
+          required.
+        </p>
+      </details>
+    </div>
+  </section>
+</div>
+<section class="reading-section">
+  <h2>A few things to know.</h2>
+  <p>
+    These are early releases. macOS is locally exercised; physical Windows and
+    Linux desktop, cross-device LAN, and update installation verification remain
+    pending.
+    <a
+      href="https://github.com/youssefsz/local-chat/blob/main/docs/platform-status.md"
+      >See platform status.</a
+    >
+  </p>
+  <p>
+    Download buttons always resolve the latest published stable release on
+    GitHub. If release information is unavailable, they take you to GitHub’s
+    release page.
+  </p>
+  <p>
+    <a
+      href="https://github.com/youssefsz/local-chat/releases/latest"
+      id="checksums-link"
+      >Checksums and all release files</a
+    >
+    · <a href="/releases">Release notes</a> ·
+    <a href="/get-started">Getting started guide</a>
+  </p>
+  <h2>Coming from a beta?</h2>
+  <p>
+    The first public release is numbered 0.0.1. Earlier test builds used
+    0.1.0-beta versions, which sort higher. Install 0.0.1 manually, then choose
+    the Stable update channel in Settings. Saved conversations stay in the same
+    app data folder. The updater never forces a downgrade.
+  </p>
+  <h2>Updates after that.</h2>
+  <p>
+    Open Settings and choose Check for updates. macOS, Windows, and Linux
+    AppImage can download and verify update packages in the app. You choose when
+    to restart. Debian installations use downloaded packages.
+  </p>
+</section>

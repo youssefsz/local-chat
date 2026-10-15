@@ -2102,6 +2102,20 @@ body {
 }
 
 /* Update controls share the existing settings and dialog vocabulary. */
+.settings-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 16px;
+  font-size: 12px;
+}
+.settings-links a {
+  color: var(--secondary);
+  text-underline-offset: 3px;
+}
+.settings-links a:hover {
+  color: var(--accent);
+}
 .settings-version {
   display: flex;
   align-items: center;
