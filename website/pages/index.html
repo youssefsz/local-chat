@@ -6,48 +6,198 @@
       Share a link, a thought, or a bit of code with the computers on your local
       network.
     </p>
-    <a class="button primary" href="/download"
-      >Download Local Chat
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M5 12h14m-6-6 6 6-6 6" /></svg
-    ></a>
+    <a class="button primary hero-download" href="/download">
+      <span>Download Local Chat</span>
+      <span class="download-arrow" aria-hidden="true"
+        ><svg viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10" /></svg
+      ></span>
+    </a>
     <p class="small">
       Free. Open source. No account needed. For macOS, Windows, and Linux.
     </p>
   </div>
   <figure class="hero-preview">
+    <div
+      class="appearance-tabs"
+      role="tablist"
+      aria-label="Screenshot appearance"
+    >
+      <button
+        type="button"
+        role="tab"
+        id="tab-light"
+        data-appearance="light"
+        aria-selected="true"
+        aria-controls="preview-light"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="4" />
+          <path
+            d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"
+          /></svg
+        >Light
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-dark"
+        data-appearance="dark"
+        aria-selected="false"
+        aria-controls="preview-dark"
+        tabindex="-1"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" /></svg
+        >Dark
+      </button>
+    </div>
     <div class="app-window" id="app-window" data-theme="light" data-ui>
       <div class="window-bar" aria-hidden="true">
-        <span class="window-controls"><span></span><span></span><span></span></span>
+        <span class="window-controls"
+          ><span></span><span></span><span></span
+        ></span>
         <span class="window-title">Local Chat</span>
       </div>
-    <a
-      href="/assets/app-light.jpg"
-      id="screenshot-link"
-      aria-label="Open full size app screenshot"
-      ><img
-        id="app-screenshot"
-        src="/assets/app-light.jpg"
-        width="1280"
-        height="900"
-        alt="Local Chat in Light appearance, with rooms on the left and a sample conversation and code snippet on the right"
-        fetchpriority="high"
-    /></a>
+      <div id="preview-light" role="tabpanel" aria-labelledby="tab-light">
+        <button
+          class="screenshot-trigger"
+          type="button"
+          data-open-preview
+          aria-haspopup="dialog"
+          aria-controls="preview-dialog"
+          aria-label="Enlarge Light app screenshot"
+        >
+          <img
+            src="/assets/app-light.jpg"
+            width="1280"
+            height="900"
+            alt="Local Chat in Light appearance, with rooms on the left and a sample conversation and code snippet on the right"
+            fetchpriority="high"
+          />
+          <span class="enlarge-cue" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="m16 16 4 4M7.5 10.5h6m-3-3v6" /></svg
+          ></span>
+        </button>
+      </div>
+      <div id="preview-dark" role="tabpanel" aria-labelledby="tab-dark" hidden>
+        <button
+          class="screenshot-trigger"
+          type="button"
+          data-open-preview
+          aria-haspopup="dialog"
+          aria-controls="preview-dialog"
+          aria-label="Enlarge Dark app screenshot"
+        >
+          <img
+            src="/assets/app-dark.jpg"
+            width="1280"
+            height="900"
+            alt="Local Chat in Dark appearance, with rooms on the left and a sample conversation and code snippet on the right"
+            loading="lazy"
+          />
+          <span class="enlarge-cue" aria-hidden="true"
+            ><svg viewBox="0 0 24 24">
+              <circle cx="10.5" cy="10.5" r="6.5" />
+              <path d="m16 16 4 4M7.5 10.5h6m-3-3v6" /></svg
+          ></span>
+        </button>
+      </div>
     </div>
     <figcaption>
-      <p>
-        The desktop app, shown with sample messages.
-        <a href="/assets/app-light.jpg" id="full-screenshot"
-          >View full-size screenshot</a
-        >.
-      </p>
-      <div class="appearance" role="group" aria-label="Screenshot appearance">
-        <button type="button" data-appearance="light" aria-pressed="true">Light</button>
-        <button type="button" data-appearance="dark" aria-pressed="false">Dark</button>
-      </div>
+      <p>The desktop app, shown with sample messages.</p>
+      <button
+        class="text-button"
+        type="button"
+        data-open-preview
+        aria-haspopup="dialog"
+        aria-controls="preview-dialog"
+      >
+        Enlarge preview<svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 4h6v6M20 4l-7 7M10 20H4v-6m0 6 7-7" />
+        </svg>
+      </button>
     </figcaption>
   </figure>
 </section>
+<dialog
+  class="preview-dialog"
+  id="preview-dialog"
+  aria-labelledby="preview-title"
+  aria-describedby="preview-help"
+>
+  <div class="preview-toolbar">
+    <h2 id="preview-title">Local Chat preview</h2>
+    <div class="preview-tools" role="group" aria-label="Image controls">
+      <button
+        type="button"
+        id="zoom-out"
+        aria-label="Zoom out"
+        title="Zoom out (−)"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 4 4M7.5 10.5h6" />
+        </svg>
+      </button>
+      <button type="button" id="zoom-fit" title="Fit image (0)">
+        <span id="zoom-label" aria-live="polite">Fit</span>
+      </button>
+      <button
+        type="button"
+        id="zoom-in"
+        aria-label="Zoom in"
+        title="Zoom in (+)"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 4 4M7.5 10.5h6m-3-3v6" />
+        </svg>
+      </button>
+      <button
+        type="button"
+        id="preview-close"
+        aria-label="Close preview"
+        title="Close (Escape)"
+        autofocus
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m6 6 12 12M18 6 6 18" />
+        </svg>
+      </button>
+    </div>
+  </div>
+  <p class="sr-only" id="preview-help">
+    Zoom in for details. When zoomed, drag or scroll to move around the image.
+    Use plus and minus to zoom, zero to fit, and Escape to close.
+  </p>
+  <div
+    class="preview-stage"
+    id="preview-stage"
+    tabindex="0"
+    role="region"
+    aria-label="App screenshot. Scroll to explore when zoomed."
+  >
+    <p class="preview-loading" id="preview-loading" role="status" hidden>
+      Loading preview…
+    </p>
+    <div class="preview-canvas" id="preview-canvas">
+      <img
+        id="preview-image"
+        src="/assets/app-light.jpg"
+        width="1280"
+        height="900"
+        alt=""
+        draggable="false"
+      />
+    </div>
+    <div class="preview-error" id="preview-error" hidden>
+      <p>The screenshot couldn’t load.</p>
+      <button class="button" type="button" id="preview-retry">Try again</button>
+    </div>
+  </div>
+</dialog>
 <section class="intro-section">
   <h2>Already in the same room?</h2>
   <p>

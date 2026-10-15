@@ -1,6 +1,6 @@
 # Native application screenshots
 
-The saved [website hero](website-hero.jpg) shows the centered layout and requested macOS preview frame.
+The saved [website hero](website-hero.jpg) shows the centered layout, compact download action, Light/Dark tabs, and macOS preview frame.
 
 The shared [Light](../../website/public/assets/app-light.jpg) and [Dark](../../website/public/assets/app-dark.jpg) captures show Local Chat 0.0.1 with isolated synthetic workshop messages. The website and repository README use these same assets.
 
