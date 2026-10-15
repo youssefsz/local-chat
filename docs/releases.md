@@ -25,23 +25,23 @@ All external actions are pinned to reviewed commit SHAs. Pull-request CI receive
 
 Release helper scripts require Python 3.11 or later and the authenticated GitHub CLI. CI explicitly installs Python 3.13 in build, validation, and publication jobs.
 
-Use `0.1.0-beta.1`, `0.1.0-beta.2`, then optionally `0.1.0-rc.1`. The first non-beta release is `0.1.0`. Pre-release versions do not consume `0.1.0`. Published tags and assets are never overwritten.
+Use `0.1.0-beta.1`, `0.1.0-beta.2`, then optionally `0.1.0-rc.1`. The first non-beta release is `0.1.0`. Pre-release versions do not consume `0.1.0`. Published tags and assets are never overwritten. Prepare a version in a PR and merge it after CI passes.
 
 ```sh
-npm run version:app -- 0.1.0-beta.6
+npm run version:app -- 0.1.0-beta.7
 npm run release:check
 # Commit the synchronized manifest and lockfile changes, then merge/push main.
-git tag -a v0.1.0-beta.6 -m "Local Chat 0.1.0-beta.6"
-git push origin v0.1.0-beta.6
+git tag -a v0.1.0-beta.7 -m "Local Chat 0.1.0-beta.7"
+git push origin v0.1.0-beta.7
 ```
 
-`Release` checks that the tag matches all manifests and points to a commit on main. It rebuilds and tests every target. The macOS release must be Developer ID signed and notarized; missing credentials fail the release rather than silently producing an ad-hoc package. A final job stages a draft release, uploads all four installers and SHA256SUMS, then publishes. A failed upload leaves a draft. Beta/RC tags are prereleases and do not replace the latest regular release. A regular tag publishes a regular release.
+`Release` checks that the tag matches all manifests and points to a commit on main. It rebuilds and tests every target. The macOS release must be Developer ID signed and notarized; missing credentials fail the release rather than silently producing an ad-hoc package. A final job creates reviewed highlights plus categorized GitHub PR notes and verified contributor credits, stages a draft, uploads installers, updater packages, signatures, update.json and SHA256SUMS, then publishes. A failed upload leaves a draft. Beta/RC tags are prereleases and do not replace the latest regular release. A regular tag publishes a regular release.
 
 Version tags are separate Git references, not commits pushed “into” main. Do not move or delete an already published tag to rerun it; fix the issue and use the next beta number. To retry an infrastructure failure before publication, rerun the failed workflow. If an interrupted publisher left an unpublished draft, rerunning resumes it only when its provenance marker matches the exact commit and its assets belong to this build. Published releases, drafts from other commits, and drafts with unexpected assets are never overwritten.
 
 ## Configure macOS signing once
 
-The current signing identity is `Developer ID Application: Youssef Dhibi (5S4ZT4SRV9)`. A certificate on a developer's Mac is not automatically available to GitHub's temporary runners.
+Use the project's authorized Developer ID Application identity. A certificate on a developer's Mac is not automatically available to GitHub's temporary runners. Signing setup is maintainer-only.
 
 1. Open Keychain Access → My Certificates. Select this **Developer ID Application** identity, including its private key, and export only that identity as a password-protected `.p12` file outside the repository. Do not export every identity in the keychain.
 2. At [account.apple.com](https://account.apple.com/), sign in with your Apple Developer account. Open **Sign-In and Security → App-Specific Passwords → Generate an app-specific password**, and name it Local Chat notarization. Use the password Apple generates in the terminal prompt. Your Mac login password, normal Apple account password, and certificate export password do not work for notarization. Apple ID notarization uses the existing Developer Program team; it does not create an App Store listing.
@@ -61,7 +61,7 @@ If Apple rejects the login, generate a new app-specific password and run `npm ru
 
 Tagged macOS builds notarize/staple the application through Tauri, then separately notarize/staple the signed DMG that users actually download. The pipeline checks Gatekeeper acceptance of both before publishing.
 
-Windows signing is intentionally not configured. It can be added later without changing the architecture matrix or versioning convention. Unsigned Windows downloads may show a SmartScreen warning. Beta.6 adds an in-app updater. Users of beta.5 and earlier install beta.6 manually once; later versions can update through the app.
+Windows signing is intentionally not configured. It can be added later without changing the architecture matrix or versioning convention. Unsigned Windows downloads may show a SmartScreen warning. Beta.6 introduced the in-app updater. Users of beta.5 and earlier manually install an updater-enabled release once.
 
 
 ## Updater signing and channels
@@ -73,3 +73,20 @@ Every tagged release generates the updater archive or reuses the platform instal
 The publisher uploads `update.json`, signatures, packages and SHA256SUMS, publishes the complete release, and then updates the separate `updates` branch. Applications read `https://raw.githubusercontent.com/youssefsz/local-chat/updates/beta.json` or `stable.json`. Version tags remain immutable. GitHub's ordinary latest-release URL is not used because prereleases must be delivered on the beta channel. Stable releases update both channels when newer. The publisher checks versions so delayed jobs cannot replace a newer feed, and uses a serialized publication group. Public feeds contain release metadata only.
 
 Check `Check for Updates…` in the app menu or Settings. Downloads stay staged until the user chooses Restart to update. A completed download is retained across Quit and verified again on the next launch. Linux AppImage updates require a writable installation; Debian users follow the package download path. Actual installation/restart on Windows and Linux desktops remains a separate manual check.
+
+## Preview release notes
+
+Write reviewed highlights in `docs/release-notes/VERSION.md`. Commit the version preparation on its branch, then preview before tagging:
+
+```sh
+python3 tools/release_notes.py --version 0.1.0-beta.7 --commit HEAD --output artifacts/release-notes-preview.md
+```
+
+This command reads GitHub history and writes a local preview. It does not publish or edit a release. The current version's highlight file must exist.
+The publisher uses the latest older published ancestor release as the explicit comparison base, excluding failed tags and unpublished drafts. GitHub groups PRs using `.github/release.yml`. Direct commit authors linked by GitHub and explicit co-author names receive credit too; emails are never printed in the notes. Keep PR titles and release labels accurate.
+
+Download links, upgrade instructions, known platform limitations, and a full comparison link are included. The publisher freezes the notes when it creates a draft. Retrying that draft retains its reviewed text. Published assets and updater metadata remain unchanged. A maintainer can separately edit a release description after reviewing a preview, while retaining the provenance marker and all original assets.
+
+## Repository maintenance
+
+Contributors use branches and PRs. Main requires the three native CI checks; the repository owner retains an administrative recovery path. Never run untrusted PR code with release secrets. Ordinary CI has read-only permissions. Private vulnerability reports use GitHub Security, linked from SECURITY.md. Generated test summaries are workflow artifacts, not committed evidence files.

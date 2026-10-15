@@ -45,10 +45,9 @@ jobs:
       - name: Version and release contract
         run: |
           python tools/check_public_tree.py
+          python tools/check_docs.py
           python tools/release.py check
-          python tools/test_release.py
-          python tools/test_signing_setup.py
-          python tools/test_updates.py
+          python tools/run_tests.py contracts --report artifacts/test-reports/contracts.json
       - name: Frontend checks and production assets
         run: |
           npm run check
@@ -57,14 +56,14 @@ jobs:
         run: |
           cargo fmt --manifest-path src-tauri/Cargo.toml --check
           cargo clippy --locked --manifest-path src-tauri/Cargo.toml --all-targets -- -D warnings
-          cargo test --locked --manifest-path src-tauri/Cargo.toml --no-default-features --lib
+          python tools/run_tests.py rust --report artifacts/test-reports/rust.json
       - name: Verify updater signature rejection
-        run: python tools/test_update_signatures.py
+        run: python tools/run_tests.py signatures --report artifacts/test-reports/signatures.json
       - name: Clean generated installers restored from cache
         run: python tools/prepare_artifacts.py '${{ matrix.platform }}' --clean
       - name: macOS Bonjour recovery regression
         if: runner.os == 'macOS'
-        run: python tools/test_bonjour_recovery.py
+        run: python tools/run_tests.py bonjour --report artifacts/test-reports/bonjour.json
       - name: Prepare macOS release identity
         if: inputs.release && runner.os == 'macOS'
         env:
@@ -118,6 +117,14 @@ jobs:
           path: release-assets/
           if-no-files-found: error
           retention-days: 14
+      - name: Upload test summaries
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: test-reports-${{ matrix.platform }}
+          path: artifacts/test-reports/
+          if-no-files-found: warn
+          retention-days: 30
       - name: Remove temporary signing keychain
         if: always() && inputs.release && runner.os == 'macOS'
         run: |

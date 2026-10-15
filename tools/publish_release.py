@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 from release import check
 from update_feed import REPO, build_feed, publish_channels
+from release_notes import generate
 
 
 def existing_state(release, marker, files):
@@ -46,19 +47,9 @@ def main():
     elif '404' not in existing.stderr: raise RuntimeError('Could not check existing release')
     if state!='published':
         notes=assets/'release-notes.md'
-        notes.write_text(f'''{marker}
-Local Chat {version}
-
-{description}
-
-Downloads: Apple Silicon macOS, Windows x64, Linux x64. Windows is unsigned and may display SmartScreen warnings. The macOS app is Developer ID signed and notarized.
-
-Local Chat can check for updates, verify signed downloads and update in the app. Linux in-app updates use AppImage; Debian installations use downloaded packages. Beta and stable channels remain separate. Users of beta.5 and earlier must install this first updater-enabled version manually once.
-
-Windows/Linux native builds and tests pass CI. Physical LAN, firewall and desktop integration checks remain separate; see docs/platform-status.md.
-
-Use SHA256SUMS to verify manual downloads. The .sig files authenticate updater packages; update.json records this release's update metadata.
-''')
+        # Freeze draft notes at creation so retries do not change attribution or text.
+        body = marker + '\n' + generate(version, os.environ['GITHUB_SHA']) if state == 'new' else json.loads(existing.stdout)['body']
+        notes.write_text(body)
         if state=='new':
             args=['gh','release','create',tag,'--repo',repo,'--verify-tag','--draft','--title',f'Local Chat {version}','--notes-file',str(notes)]
             if '-' in version: args.append('--prerelease')

@@ -1,0 +1,24 @@
+name: Feature request
+description: Describe a problem that Local Chat could solve.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe who encounters it and when.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives or workarounds
+  - type: markdown
+    attributes:
+      value: Local Chat focuses on public rooms on the current LAN. Read [the product scope](https://github.com/youssefsz/local-chat/blob/main/PRODUCT.md) before proposing a larger change.

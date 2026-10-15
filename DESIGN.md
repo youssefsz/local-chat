@@ -159,9 +159,9 @@ components:
 
 ## Overview
 
-**Creative North Star: "Quiet communal studio"**
+The interface uses a quiet, compact workspace.
 
-Local Chat keeps the approved reference's warm neutral sidebar, clear conversation pane, compact controls, and restrained terracotta accent. It is an Operate desktop interface for reading, sending, finding, and copying. System type, initial avatars, and authored SVG stroke icons keep those tasks familiar.
+Local Chat keeps the approved reference's warm neutral sidebar, clear conversation pane, compact controls, and restrained terracotta accent. It is an Operate desktop interface for reading, sending, finding, and copying. System type, initial avatars, and the existing SVG stroke icons keep those tasks familiar.
 
 The production implementation is Tauri with Svelte and plain CSS. The application fills its native window and uses operating-system window controls. The approved HTML under `docs/reference/outputs/index.html` remains the immutable visual authority. This document records the production rules in `src/styles/app.css`, `src/App.svelte`, and `src/components/MessageView.svelte`; product and platform evidence remain in `PRODUCT.md` and `docs/testing.md`.
 
@@ -211,7 +211,7 @@ Messages use bounded backend pages; loading earlier messages retains at most 160
 
 ## Elevation & Depth
 
-Flat tonal panels and one-pixel borders organize the workspace. Message rows have no shadow, and the application has no CSS window shadow. Floating menus, dialogs, the overlay people panel, toasts, and the new-message control use the small shadow vocabulary recorded in `.impeccable/design.json`. Dialogs dim the background with the source's translucent backdrop.
+Flat tonal panels and one-pixel borders organize the workspace. Message rows have no shadow, and the application has no CSS window shadow. Floating menus, dialogs, the overlay people panel, toasts, and the new-message control use the existing shadow tokens in `src/styles/app.css`. Dialogs dim the background with the source's translucent backdrop.
 
 **The Flat Workspace Rule.** Reserve elevation for transient controls and overlays; keep the conversation and navigation flat.
 

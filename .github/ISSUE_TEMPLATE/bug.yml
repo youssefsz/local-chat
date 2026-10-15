@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible problem with Local Chat.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first. For security vulnerabilities, use [private reporting](https://github.com/youssefsz/local-chat/security/advisories/new).
+        Remove messages, credentials, device identifiers, and private network details from attachments.
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      description: Find this in Settings.
+      placeholder: 0.1.0-beta.6
+    validations:
+      required: true
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Operating system
+      options:
+        - macOS Apple Silicon
+        - Windows x64
+        - Linux x64 AppImage
+        - Linux x64 Debian package
+    validations:
+      required: true
+  - type: input
+    id: os-version
+    attributes:
+      label: OS version
+      placeholder: Windows 11, macOS 15, Ubuntu 24.04
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the number of computers and whether this follows sleep, a network change, or an update, when relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: Screenshots or additional details
+      description: Optional. Use synthetic conversations and remove private information.
