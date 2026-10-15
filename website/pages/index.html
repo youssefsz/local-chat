@@ -1,7 +1,7 @@
 <!--{"title":"Local Chat","description":"Share messages, links, and code with nearby computers on the same local network. No account or cloud server. Free for macOS, Windows, and Linux."}-->
-<section class="hero">
+<section class="hero" aria-labelledby="hero-title">
   <div class="hero-copy">
-    <h1>Chat stays nearby.</h1>
+    <h1 id="hero-title">Chat stays nearby.</h1>
     <p>
       Share a link, a thought, or a bit of code with the computers on your local
       network.
@@ -12,73 +12,10 @@
         <path d="M5 12h14m-6-6 6 6-6 6" /></svg
     ></a>
     <p class="small">
-      Free. Open source. No account needed.<br />For macOS, Windows, and Linux.
+      Free. Open source. No account needed. For macOS, Windows, and Linux.
     </p>
   </div>
-  <div class="demo-wrap">
-    <div class="conversation-demo" data-ui>
-      <div class="demo-header">
-        <span class="room-hash">#</span><strong>General</strong
-        ><span>A place to share</span>
-      </div>
-      <div class="demo-message">
-        <span class="avatar">S</span>
-        <div>
-          <strong>Sam</strong>
-          <p>Here’s the little script from earlier.</p>
-        </div>
-      </div>
-      <div class="demo-message">
-        <span class="avatar own">Y</span>
-        <div>
-          <strong>You</strong>
-          <div class="code-example">
-            <div>
-              <span>JavaScript</span
-              ><button
-                type="button"
-                id="copy-code"
-                aria-label="Copy example code"
-              >
-                Copy code
-              </button>
-            </div>
-            <pre><code id="example-code">const nearby = ["a thought", "a link", "some code"];
-
-for (const thing of nearby) {
-  console.log(thing);
-}</code></pre>
-          </div>
-        </div>
-      </div>
-      <div class="demo-bottom">
-        <span>One network. A shared conversation.</span>
-      </div>
-    </div>
-    <p class="demo-caption">An example conversation. Try copying the code.</p>
-    <p id="copy-status" class="sr-only" role="status"></p>
-  </div>
-</section>
-<section class="intro-section">
-  <h2>Already in the same room?</h2>
-  <p>
-    Keep the conversation there, too. Local Chat finds other running copies on
-    your network and connects them directly. There’s no server to set up and no
-    invite link to pass around.
-  </p>
-</section>
-<section class="app-showcase" aria-labelledby="look-title">
-  <div class="showcase-heading">
-    <h2 id="look-title">A familiar place to talk.</h2>
-    <div class="appearance" role="group" aria-label="Screenshot appearance">
-      <button type="button" data-appearance="light" aria-pressed="true">
-        Light</button
-      ><button type="button" data-appearance="dark" aria-pressed="false">
-        Dark
-      </button>
-    </div>
-  </div>
-  <figure>
+  <figure class="hero-preview">
     <a
       href="/assets/app-light.jpg"
       id="screenshot-link"
@@ -89,16 +26,29 @@ for (const thing of nearby) {
         width="1280"
         height="800"
         alt="Local Chat in Light appearance, with rooms on the left and a sample conversation and code snippet on the right"
-        loading="lazy"
+        fetchpriority="high"
     /></a>
     <figcaption>
-      The desktop app, shown with sample messages. Your conversations live on
-      your computer.
-      <a href="/assets/app-light.jpg" id="full-screenshot"
-        >View full-size screenshot</a
-      >.
+      <p>
+        The desktop app, shown with sample messages.
+        <a href="/assets/app-light.jpg" id="full-screenshot"
+          >View full-size screenshot</a
+        >.
+      </p>
+      <div class="appearance" role="group" aria-label="Screenshot appearance">
+        <button type="button" data-appearance="light" aria-pressed="true">Light</button>
+        <button type="button" data-appearance="dark" aria-pressed="false">Dark</button>
+      </div>
     </figcaption>
   </figure>
+</section>
+<section class="intro-section">
+  <h2>Already in the same room?</h2>
+  <p>
+    Keep the conversation there, too. Local Chat finds other running copies on
+    your network and connects them directly. There’s no server to set up and no
+    invite link to pass around.
+  </p>
 </section>
 <section class="explain-section">
   <div>

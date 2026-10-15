@@ -1,20 +1,3 @@
-const copyButton = document.querySelector('#copy-code');
-copyButton?.addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText(
-      document.querySelector('#example-code').textContent,
-    );
-    copyButton.textContent = 'Copied';
-    document.querySelector('#copy-status').textContent = 'Example code copied.';
-    setTimeout(() => {
-      copyButton.textContent = 'Copy code';
-    }, 1500);
-  } catch {
-    document.querySelector('#copy-status').textContent =
-      'Could not access the clipboard. Select the code to copy it manually.';
-  }
-});
-
 for (const button of document.querySelectorAll('[data-appearance]')) {
   button.addEventListener('click', () => {
     const dark = button.dataset.appearance === 'dark';
