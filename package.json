@@ -16,7 +16,12 @@
     "release:check": "python3 tools/release.py check",
     "signing:setup": "python3 tools/configure_signing.py",
     "notarization:setup": "python3 tools/configure_signing.py --notarization-only",
-    "updater:setup": "python3 tools/configure_updater.py"
+    "updater:setup": "python3 tools/configure_updater.py",
+    "test:contracts": "python3 tools/run_tests.py contracts",
+    "test:signatures": "python3 tools/run_tests.py signatures",
+    "test:bonjour": "python3 tools/run_tests.py bonjour",
+    "test:integration": "python3 tools/run_tests.py integration",
+    "test:all": "python3 tools/run_tests.py all"
   },
   "dependencies": {
     "@tauri-apps/api": "2.12.4",

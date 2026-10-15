@@ -18,3 +18,7 @@ src-tauri/gen/
 *.keychain
 *.keychain-db
 release-assets/
+
+# Local design tooling and generated verification output
+.impeccable/
+docs/evidence/

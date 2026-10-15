@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/youssefsz/local-chat/security/advisories/new
+    about: Do not post vulnerability details in public issues.
+  - name: Usage and troubleshooting
+    url: https://github.com/youssefsz/local-chat/blob/main/SUPPORT.md
+    about: Check supported platforms and common connection problems.

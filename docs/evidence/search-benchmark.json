@@ -1,1 +1,0 @@
-{"build":"release","dataset":100000,"fixture":"synthetic text, 1000 needle matches, 99000 common matches; same SQLite schema and FTS triggers","message_page_p95_ms":0.071083,"search_p50_ms":35.955417000000004,"search_p95_ms":59.745417,"search_runs":200,"seed_ms":3106.7007919999996}
