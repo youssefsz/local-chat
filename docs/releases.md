@@ -23,6 +23,8 @@ All external actions are pinned to reviewed commit SHAs. Pull-request CI receive
 
 ## Version and tag releases
 
+Release helper scripts require Python 3.11 or later and the authenticated GitHub CLI. CI explicitly installs Python 3.13 in build, validation, and publication jobs.
+
 Use `0.1.0-beta.1`, `0.1.0-beta.2`, then optionally `0.1.0-rc.1`. The first non-beta release is `0.1.0`. Pre-release versions do not consume `0.1.0`. Published tags and assets are never overwritten.
 
 ```sh

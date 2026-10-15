@@ -4,6 +4,9 @@ import argparse
 import json
 import re
 import subprocess
+import sys
+if sys.version_info < (3, 11):
+    raise SystemExit("Release tooling requires Python 3.11 or later.")
 import tomllib
 from pathlib import Path
 
